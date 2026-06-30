@@ -3,7 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Models\Order;
-use App\Services\RabbitMQPublisher;
+use App\Services\SalesforceService;
 use Illuminate\Console\Command;
 use PhpAmqpLib\Connection\AMQPSSLConnection;
 use PhpAmqpLib\Connection\AMQPStreamConnection;
@@ -96,8 +96,7 @@ class ConsumeOrders extends Command
 
     /**
      * Process a received order message.
-     * Updates the order status in the database.
-     * TODO (Step 4): send to Salesforce API here.
+     * Calls SalesforceService to create an Opportunity, then updates the order.
      *
      * @param array $data The decoded message payload
      * @return bool True on success, false on failure
@@ -112,14 +111,16 @@ class ConsumeOrders extends Command
                 return false;
             }
 
-            // TODO (Step 4): call Salesforce API here and get salesforce_id back
-            // $salesforceId = app(SalesforceService::class)->createOpportunity($data);
-            // $order->update(['status' => 'sent', 'salesforce_id' => $salesforceId]);
+            // Send the order to Salesforce and get back the Opportunity ID
+            $salesforceId = app(SalesforceService::class)->createOpportunity($data);
 
-            // For now: mark as sent and log
-            $order->update(['status' => 'sent']);
+            // Save the Salesforce ID and mark the order as sent
+            $order->update([
+                'status'        => 'sent',
+                'salesforce_id' => $salesforceId,
+            ]);
 
-            Log::info("[RabbitMQ Consumer] Order #{$order->id} processed successfully.");
+            Log::info("[RabbitMQ Consumer] Order #{$order->id} synced to Salesforce: {$salesforceId}");
 
             return true;
 
