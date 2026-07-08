@@ -32,6 +32,15 @@
                        style="{{ request()->routeIs('orders.*') ? 'background-color: #da532c;' : '' }}">
                         Bestellingen
                     </a>
+                    {{-- Only visible to admins — account management --}}
+                    @role('admin')
+                        <a href="{{ route('admin.users.index') }}"
+                           class="px-4 py-2 rounded-lg text-sm font-medium transition
+                                  {{ request()->routeIs('admin.users.*') ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/10' }}"
+                           style="{{ request()->routeIs('admin.users.*') ? 'background-color: #da532c;' : '' }}">
+                            Gebruikers
+                        </a>
+                    @endrole
                 </div>
             </div>
 
@@ -101,6 +110,13 @@
            class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">
             Bestellingen
         </a>
+        {{-- Only visible to admins — account management --}}
+        @role('admin')
+            <a href="{{ route('admin.users.index') }}"
+               class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">
+                Gebruikers
+            </a>
+        @endrole
         <hr class="border-white/10 my-2">
         <a href="{{ route('profile.edit') }}"
            class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/10">
