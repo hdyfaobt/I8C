@@ -3,34 +3,41 @@
 use App\Console\Commands\ConsumeOrders;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Services\SalesforceService;
 
 // ---------------------------------------------------------------------------
 // ConsumeOrders — tests for the processOrder() logic
 // ---------------------------------------------------------------------------
 
-it('marks an order as sent on success', function () {
+beforeEach(function () {
+    $this->mock(SalesforceService::class, function ($mock) {
+        $mock->shouldReceive('syncOrder')->andReturn('006XX0000000000AAA');
+    });
+});
+
+it('syncs an order to Salesforce and marks it as sent', function () {
     $customer = Customer::factory()->create();
-    $order    = Order::factory()->create([
+    $order = Order::factory()->create([
         'customer_id' => $customer->id,
-        'status'      => 'pending',
+        'status' => 'pending',
     ]);
 
     $command = app(ConsumeOrders::class);
 
     $reflection = new ReflectionClass($command);
-    $method     = $reflection->getMethod('processOrder');
+    $method = $reflection->getMethod('processOrder');
     $method->setAccessible(true);
 
     $result = $method->invoke($command, [
-        'order_id'    => $order->id,
+        'order_id' => $order->id,
         'customer_id' => $customer->id,
-        'customer'    => $customer->name,
-        'product'     => $order->product,
-        'quantity'    => $order->quantity,
-        'unit_price'  => $order->unit_price,
-        'total'       => $order->quantity * $order->unit_price,
-        'notes'       => $order->notes,
-        'created_at'  => now()->toISOString(),
+        'customer' => $customer->name,
+        'product' => $order->product,
+        'quantity' => $order->quantity,
+        'unit_price' => $order->unit_price,
+        'total' => $order->quantity * $order->unit_price,
+        'notes' => $order->notes,
+        'created_at' => now()->toISOString(),
     ]);
 
     expect($result)->toBeTrue();
@@ -40,17 +47,21 @@ it('marks an order as sent on success', function () {
 });
 
 it('returns false when order is not found in database', function () {
+    $this->mock(SalesforceService::class, function ($mock) {
+        $mock->shouldReceive('syncOrder')->never();
+    });
+
     $command = app(ConsumeOrders::class);
 
     $reflection = new ReflectionClass($command);
-    $method     = $reflection->getMethod('processOrder');
+    $method = $reflection->getMethod('processOrder');
     $method->setAccessible(true);
 
     $result = $method->invoke($command, [
         'order_id' => 99999,
-        'product'  => 'Ghost',
-        'total'    => 100,
-        'notes'    => null,
+        'product' => 'Ghost',
+        'total' => 100,
+        'notes' => null,
     ]);
 
     expect($result)->toBeFalse();
