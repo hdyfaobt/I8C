@@ -3,6 +3,22 @@
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
             Dashboard
         </h2>
+
+
+            {{-- Quick actions --}}
+                <div class="flex flex-wrap -3">
+                    <a href="{{ route('customers.create') }}"
+                       class="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition"
+                       style="background-color: #da532c;">
+                        + Klant toevoegen
+                    </a>
+                    <a href="{{ route('orders.create') }}"
+                       class="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition"
+                       style="background-color: #1e2235;">
+                        + Bestelling plaatsen
+                    </a>
+                </div>
+            
     </x-slot>
 
     <div class="py-10">
@@ -77,23 +93,6 @@
                         </div>
                     </div>
                 </a>
-            </div>
-
-            {{-- Quick actions --}}
-            <div class="bg-white rounded-2xl p-6 shadow-sm">
-                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Snelle acties</h3>
-                <div class="flex flex-wrap gap-3">
-                    <a href="{{ route('customers.create') }}"
-                       class="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition"
-                       style="background-color: #da532c;">
-                        + Klant toevoegen
-                    </a>
-                    <a href="{{ route('orders.create') }}"
-                       class="px-5 py-2.5 rounded-xl text-sm font-medium text-white transition"
-                       style="background-color: #1e2235;">
-                        + Bestelling plaatsen
-                    </a>
-                </div>
             </div>
 
         </div>
