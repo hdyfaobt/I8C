@@ -12,19 +12,51 @@
                 <form method="POST" action="{{ route('orders.store') }}">
                     @csrf
 
-                    {{-- Customer dropdown --}}
-                    <div class="mb-4">
+                    {{-- Customer search combobox — queries customers.search as you type       --}}
+                    {{-- instead of loading every customer into a giant <select> (doesn't scale). --}}
+                    <div class="mb-4"
+                         x-data="customerSearch(
+                             @js($selectedCustomer),
+                             @js(route('customers.search'))
+                         )">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Klant *</label>
-                        <select name="customer_id"
-                                class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                            <option value="">— Selecteer een klant —</option>
-                            @foreach ($customers as $customer)
-                                <option value="{{ $customer->id }}"
-                                    {{ old('customer_id') == $customer->id ? 'selected' : '' }}>
-                                    {{ $customer->name }} ({{ $customer->company ?? $customer->email }})
-                                </option>
-                            @endforeach
-                        </select>
+
+                        <div class="relative">
+                            <input type="text"
+                                   x-model="query"
+                                   @input.debounce.300ms="search()"
+                                   @focus="onFocus()"
+                                   @click.outside="open = false"
+                                   autocomplete="off"
+                                   placeholder="Zoek op naam, e-mail of bedrijf..."
+                                   class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+
+                            {{-- Actual value submitted with the form --}}
+                            <input type="hidden" name="customer_id" x-model="selectedId">
+
+                            {{-- Search results --}}
+                            <div x-show="open && results.length > 0"
+                                 x-transition
+                                 class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto"
+                                 style="display: none;">
+                                <template x-for="customer in results" :key="customer.id">
+                                    <button type="button"
+                                            @click="select(customer)"
+                                            class="w-full text-left px-4 py-2 hover:bg-indigo-50 text-sm">
+                                        <span x-text="customer.name" class="font-medium text-gray-900"></span>
+                                        <span x-text="customer.company ? ' — ' + customer.company : ' — ' + customer.email" class="text-gray-500"></span>
+                                    </button>
+                                </template>
+                            </div>
+
+                            {{-- No results --}}
+                            <div x-show="open && !loading && results.length === 0"
+                                 class="absolute z-10 mt-1 w-full bg-white border border-gray-200 rounded-md shadow-lg px-4 py-2 text-sm text-gray-400"
+                                 style="display: none;">
+                                Geen klanten gevonden.
+                            </div>
+                        </div>
+
                         @error('customer_id')
                             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                         @enderror
