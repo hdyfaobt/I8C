@@ -28,3 +28,10 @@ Homestead.json
 .env.production
 .phpactor.json
 auth.json
+
+# Salesforce credentials — never commit private keys or certificates
+*.pem
+*.key
+*.crt
+salesforce-cert.crt
+salesforce-key.pem
