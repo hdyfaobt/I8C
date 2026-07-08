@@ -28,7 +28,7 @@ class Order extends Model
      */
     protected $casts = [
         'unit_price' => 'decimal:2',
-        'quantity'   => 'integer',
+        'quantity' => 'integer',
     ];
 
     /**
