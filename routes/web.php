@@ -1,25 +1,33 @@
 <?php
 
+use App\Http\Controllers\Userzone\CustomerController;
+use App\Http\Controllers\Userzone\OrderController;
+use App\Http\Controllers\Userzone\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// ── Startpagina ────────────────────────────────────────────────────────────
+// Iedereen wordt doorgestuurd naar de loginpagina
+Route::get('/', fn () => redirect()->route('login'));
 
 Route::get('/dashboard', function () {
     return view('userzone.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [App\Http\Controllers\Userzone\ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [App\Http\Controllers\Userzone\ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [App\Http\Controllers\Userzone\ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Customer search — used by the async combobox in the order form (AJAX, JSON).
+    // Registered before the resource route so "search" isn't captured by the {customer} wildcard.
+    Route::get('/customers/search', [CustomerController::class, 'search'])
+        ->name('customers.search');
 
     // Customer CRUD routes — accessible to authenticated users only
-    Route::resource('customers', App\Http\Controllers\Userzone\CustomerController::class);
+    Route::resource('customers', CustomerController::class);
 
     // Order routes — only index, create, store and show (no edit/delete for orders)
-    Route::resource('orders', App\Http\Controllers\Userzone\OrderController::class)
+    Route::resource('orders', OrderController::class)
         ->only(['index', 'create', 'store', 'show']);
 });
 
