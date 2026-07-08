@@ -23,13 +23,29 @@ class OrderController extends Controller
 
     /**
      * Show the form to create a new order.
-     * Pass the list of customers for the dropdown.
+     * Customers are no longer preloaded here — the form fetches them on-demand
+     * via the customers.search endpoint (see CustomerController::search()).
      */
     public function create()
     {
-        $customers = Customer::orderBy('name')->get();
+        // If we're redisplaying the form after a validation error, reload the
+        // previously selected customer so the search combobox can show it again.
+        $selectedCustomer = null;
 
-        return view('userzone.orders.create', compact('customers'));
+        if (old('customer_id')) {
+            $customer = Customer::find(old('customer_id'));
+
+            if ($customer) {
+                $selectedCustomer = [
+                    'id' => $customer->id,
+                    'name' => $customer->name,
+                    'email' => $customer->email,
+                    'company' => $customer->company,
+                ];
+            }
+        }
+
+        return view('userzone.orders.create', compact('selectedCustomer'));
     }
 
     /**
@@ -40,10 +56,10 @@ class OrderController extends Controller
     {
         $validated = $request->validate([
             'customer_id' => 'required|exists:customers,id',
-            'product'     => 'required|string|max:255',
-            'quantity'    => 'required|integer|min:1',
-            'unit_price'  => 'required|numeric|min:0',
-            'notes'       => 'nullable|string|max:1000',
+            'product' => 'required|string|max:255',
+            'quantity' => 'required|integer|min:1',
+            'unit_price' => 'required|numeric|min:0',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
         // Status is always 'pending' on creation — will be updated after RabbitMQ processing
@@ -58,8 +74,8 @@ class OrderController extends Controller
         $published = app(RabbitMQPublisher::class)->publishOrder($order);
 
         $message = $published
-            ? 'Bestelling #' . $order->id . ' aangemaakt en verzonden naar de wachtrij.'
-            : 'Bestelling #' . $order->id . ' aangemaakt, maar kon niet naar de wachtrij worden gestuurd.';
+            ? 'Bestelling #'.$order->id.' aangemaakt en verzonden naar de wachtrij.'
+            : 'Bestelling #'.$order->id.' aangemaakt, maar kon niet naar de wachtrij worden gestuurd.';
 
         return redirect()->route('orders.index')->with('success', $message);
     }
