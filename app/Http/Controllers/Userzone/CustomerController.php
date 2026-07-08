@@ -33,9 +33,9 @@ class CustomerController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name'    => 'required|string|max:255',
-            'email'   => 'required|email|unique:customers,email',
-            'phone'   => 'nullable|string|max:50',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:customers,email',
+            'phone' => 'nullable|string|max:50',
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:1000',
         ]);
@@ -44,6 +44,43 @@ class CustomerController extends Controller
 
         return redirect()->route('customers.index')
             ->with('success', 'Klant succesvol aangemaakt.');
+    }
+
+    /**
+     * Search customers by name, email or company.
+     * Used by the async combobox on the order creation form so we never
+     * load thousands of customers into a single <select> at once (AJAX, JSON response).
+     */
+    public function search(Request $request)
+    {
+        $query = trim((string) $request->query('q', ''));
+
+        $customers = Customer::query()
+            ->when($query !== '', function ($builder) use ($query) {
+                $builder->where(function ($builder) use ($query) {
+                    $builder->where('name', 'like', "%{$query}%")
+                        ->orWhere('email', 'like', "%{$query}%")
+                        ->orWhere('company', 'like', "%{$query}%");
+                });
+            })
+            ->orderBy('name')
+            ->limit(15)
+            ->get(['id', 'name', 'email', 'company']);
+
+        return response()->json($customers);
+    }
+
+    /**
+     * Display the details of a single customer, including their order history.
+     */
+    public function show(Customer $customer)
+    {
+        // Eager-load the customer's orders, newest first
+        $customer->load(['orders' => function ($query) {
+            $query->latest();
+        }]);
+
+        return view('userzone.customers.show', compact('customer'));
     }
 
     /**
@@ -61,9 +98,9 @@ class CustomerController extends Controller
     public function update(Request $request, Customer $customer)
     {
         $validated = $request->validate([
-            'name'    => 'required|string|max:255',
-            'email'   => 'required|email|unique:customers,email,' . $customer->id,
-            'phone'   => 'nullable|string|max:50',
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:customers,email,'.$customer->id,
+            'phone' => 'nullable|string|max:50',
             'company' => 'nullable|string|max:255',
             'address' => 'nullable|string|max:1000',
         ]);
