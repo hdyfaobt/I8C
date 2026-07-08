@@ -15,6 +15,68 @@
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.1/dist/cdn.min.js"></script>
 
+    <script>
+        // Customer search combobox — used on the "create order" form.
+        // Registered on the "alpine:init" event so it's ready before Alpine
+        // scans the DOM (required since Alpine is loaded via CDN here, not
+        // bundled through Vite — resources/js/app.js is not loaded on this layout).
+        document.addEventListener('alpine:init', () => {
+            /**
+             * @param {object|null} selectedCustomer Pre-selected customer (e.g. after a validation error redisplay).
+             * @param {string} searchUrl The "customers.search" route URL.
+             */
+            Alpine.data('customerSearch', (selectedCustomer = null, searchUrl = '/customers/search') => ({
+                query: selectedCustomer ? `${selectedCustomer.name} (${selectedCustomer.company ?? selectedCustomer.email})` : '',
+                selectedId: selectedCustomer ? selectedCustomer.id : '',
+                results: [],
+                open: false,
+                loading: false,
+
+                // Called when the input gains focus. If nothing has been searched yet,
+                // load a default list (first 15 customers, alphabetical) so there's
+                // always something to pick from — not just after typing.
+                onFocus() {
+                    if (this.results.length > 0) {
+                        this.open = true;
+                    } else {
+                        this.search();
+                    }
+                },
+
+                // Fetch customers matching the current query from the server.
+                // An empty query still hits the backend, which returns the first 15
+                // customers (alphabetical) — that's the "default list" shown on focus.
+                async search() {
+                    // Any manual edit of the text invalidates the previous selection.
+                    this.selectedId = '';
+                    this.loading = true;
+                    this.open = true;
+
+                    try {
+                        const url = new URL(searchUrl, window.location.origin);
+                        url.searchParams.set('q', this.query);
+
+                        const response = await fetch(url, {
+                            headers: { 'Accept': 'application/json' },
+                        });
+
+                        this.results = await response.json();
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // Select a customer from the results list.
+                select(customer) {
+                    this.selectedId = customer.id;
+                    this.query = `${customer.name} (${customer.company ?? customer.email})`;
+                    this.results = [];
+                    this.open = false;
+                },
+            }));
+        });
+    </script>
+
     <style>
         /* I8C brand colors */
         :root {
