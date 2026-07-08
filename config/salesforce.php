@@ -7,20 +7,20 @@ return [
     | Salesforce REST API Configuration
     |--------------------------------------------------------------------------
     |
-    | Uses OAuth 2.0 Username-Password flow for server-to-server integration.
-    | Create a Connected App in Salesforce to get your Consumer Key & Secret.
+    | Uses OAuth 2.0 Client Credentials flow (server-to-server, no user
+    | username/password involved — Salesforce's replacement for the
+    | Username-Password flow, which is blocked by default on orgs created
+    | Summer '23+ and unsupported on External Client Apps entirely).
     |
-    | Settings → App Manager → New Connected App
+    | Setup → App Manager → External Client Apps → your app → Settings:
     |   - Enable OAuth Settings
-    |   - Enable "Use Digital Signatures" (optional)
     |   - Selected OAuth Scopes: "Access and manage your data (api)"
+    |   - Enable Client Credentials Flow, set a "Run As" user
     |
     */
 
     'client_id' => env('SALESFORCE_CLIENT_ID'),
     'client_secret' => env('SALESFORCE_CLIENT_SECRET'),
-    'username' => env('SALESFORCE_USERNAME'),
-    'password' => env('SALESFORCE_PASSWORD'),
 
     // Login URL: login.salesforce.com (production) or test.salesforce.com (sandbox)
     'login_url' => env('SALESFORCE_LOGIN_URL', 'https://login.salesforce.com'),
