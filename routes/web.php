@@ -30,6 +30,10 @@ Route::middleware('auth')->group(function () {
     // Order routes — only index, create, store and show (no edit/delete for orders)
     Route::resource('orders', OrderController::class)
         ->only(['index', 'create', 'store', 'show']);
+
+    // Recreate a previous order for the same customer (same product/qty/price)
+    Route::post('/orders/{order}/repeat', [OrderController::class, 'repeat'])
+        ->name('orders.repeat');
 });
 
 // Account management — admins only. Lets an admin create accounts for
