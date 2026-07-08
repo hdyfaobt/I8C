@@ -14,27 +14,85 @@
     <!-- Tailwind CSS & Alpine.js via CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.1/dist/cdn.min.js"></script>
+
+    <style>
+        /* I8C brand colors */
+        :root {
+            --i8c-orange: #da532c;
+            --i8c-navy:   #1e2235;
+        }
+
+        /* Decorative circles on the left panel */
+        .brand-circle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.04);
+        }
+    </style>
 </head>
-<body class="font-sans text-gray-900 antialiased" style="background-color: #1e2235;">
+<body class="font-sans antialiased" style="background-color: #f1f3f7;">
 
-    <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">
+    {{-- ===== SPLIT-SCREEN WRAPPER ===== --}}
+    <div class="min-h-screen flex">
 
-        {{-- I8C Logo --}}
-        <a href="/" class="mb-6">
-            <span style="color: #da532c; font-size: 2.5rem; font-weight: 800; letter-spacing: -2px; line-height: 1;">
-                i<span style="color: white;">8</span>c
-            </span>
-        </a>
+        {{-- ===== LEFT PANEL — i8c branding (hidden on mobile) ===== --}}
+        <div class="hidden lg:flex lg:w-1/2 flex-col justify-between relative overflow-hidden p-12"
+             style="background-color: #1e2235;">
 
-        {{-- Auth card --}}
-        <div class="w-full sm:max-w-md px-6 py-8 bg-white shadow-xl rounded-2xl">
-            {{ $slot }}
+            {{-- Decorative background circles --}}
+            <div class="brand-circle w-96 h-96" style="top: -80px; right: -80px;"></div>
+            <div class="brand-circle w-64 h-64" style="bottom: 120px; left: -40px;"></div>
+            <div class="brand-circle w-32 h-32" style="bottom: 60px; right: 100px; background: rgba(218,83,44,0.08);"></div>
+
+            {{-- Logo --}}
+            <div class="relative z-10">
+                <a href="/" class="inline-block">
+                    <span style="color: #da532c; font-size: 2.8rem; font-weight: 800; letter-spacing: -2px; line-height: 1;">
+                        i<span style="color: white;">8</span>c
+                    </span>
+                </a>
+            </div>
+
+            {{-- Central tagline --}}
+            <div class="relative z-10">
+                <p class="text-xs font-semibold uppercase tracking-widest mb-4"
+                   style="color: #da532c;">Welkom bij i8c</p>
+                <h1 class="text-4xl font-bold text-white leading-snug mb-4">
+                    Uw partner in<br>
+                    <span style="color: #da532c;">systeemintegratie</span>
+                </h1>
+                <p class="text-gray-400 text-base leading-relaxed max-w-sm">
+                    Beheer uw klanten, bestellingen en workflows op één plek — snel, veilig en betrouwbaar.
+                </p>
+            </div>
+
+            {{-- Bottom footer --}}
+            <div class="relative z-10">
+                <p class="text-sm text-gray-600">
+                    © {{ date('Y') }} i8c — Integratie experts
+                </p>
+            </div>
         </div>
 
-        <p class="mt-6 text-sm text-gray-500">
-            © {{ date('Y') }} i8c — Integratie experts
-        </p>
-    </div>
+        {{-- ===== RIGHT PANEL — auth form ===== --}}
+        <div class="flex-1 flex flex-col justify-center items-center px-6 py-12 bg-white">
+
+            {{-- Mobile logo (only shows when left panel is hidden) --}}
+            <div class="lg:hidden mb-8">
+                <a href="/">
+                    <span style="color: #da532c; font-size: 2.5rem; font-weight: 800; letter-spacing: -2px; line-height: 1;">
+                        i<span style="color: #1e2235;">8</span>c
+                    </span>
+                </a>
+            </div>
+
+            {{-- Form card --}}
+            <div class="w-full max-w-md">
+                {{ $slot }}
+            </div>
+        </div>
+
+    </div>{{-- end split-screen --}}
 
 </body>
 </html>
