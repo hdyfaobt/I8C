@@ -111,9 +111,18 @@
                                         <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded text-xs">In afwachting</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-right text-sm">
+                                <td class="px-6 py-4 text-right text-sm space-x-2">
                                     <a href="{{ route('orders.show', $order) }}"
                                        class="text-indigo-600 hover:text-indigo-900">Details</a>
+
+                                    {{-- Repeat this order — same product/quantity/price, new order ID --}}
+                                    <form action="{{ route('orders.repeat', $order) }}" method="POST" class="inline"
+                                          onsubmit="return confirm('Deze bestelling opnieuw plaatsen ({{ $order->quantity }}x {{ $order->product }})?')">
+                                        @csrf
+                                        <button type="submit" class="text-gray-500 hover:text-gray-900">
+                                            Opnieuw bestellen
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
                         @empty
