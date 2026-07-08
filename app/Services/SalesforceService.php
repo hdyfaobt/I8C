@@ -13,14 +13,19 @@ class SalesforceService
 
     private ?string $instanceUrl = null;
 
+    /**
+     * Authenticate with Salesforce using the OAuth 2.0 Client Credentials flow.
+     * This is a server-to-server flow: only the Connected/External Client App's
+     * Client ID and Secret are needed — no user username/password/security
+     * token. The API acts as the "Run As" user configured on the app in
+     * Salesforce (Setup → App → OAuth Settings → Client Credentials Flow).
+     */
     public function authenticate(): void
     {
         $response = Http::asForm()->post(config('salesforce.login_url').'/services/oauth2/token', [
-            'grant_type' => 'password',
+            'grant_type' => 'client_credentials',
             'client_id' => config('salesforce.client_id'),
             'client_secret' => config('salesforce.client_secret'),
-            'username' => config('salesforce.username'),
-            'password' => config('salesforce.password'),
         ]);
 
         if ($response->failed()) {
@@ -98,8 +103,12 @@ class SalesforceService
 
     private function createOpportunity(Order $order, string $accountId): string
     {
+        // Include the order number and customer name in the Opportunity name so it's
+        // recognizable in Salesforce list views, without having to open the record.
+        $opportunityName = "Bestelling #{$order->id} — {$order->customer->name} — {$order->product}";
+
         $response = $this->request('POST', '/services/data/v'.config('salesforce.api_version').'/sobjects/Opportunity', [
-            'Name' => $order->product,
+            'Name' => $opportunityName,
             'StageName' => 'Prospecting',
             'CloseDate' => now()->addDays(30)->format('Y-m-d'),
             'Amount' => $order->totalPrice(),
