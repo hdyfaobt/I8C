@@ -14,7 +14,12 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
-        User::updateOrCreate(
+        // Make sure the base roles exist — this seeder can be run standalone
+        // (php artisan db:seed --class=AdminUserSeeder), so we can't assume
+        // RoleSeeder already ran.
+        $this->call(RoleSeeder::class);
+
+        $admin = User::updateOrCreate(
             ['email' => 'admin@be'],
             [
                 'name' => 'Admin',
@@ -23,6 +28,9 @@ class AdminUserSeeder extends Seeder
             ]
         );
 
-        $this->command->info('Admin user created: admin@be / password');
+        // Give the default account full admin rights (requires RoleSeeder to have run first)
+        $admin->syncRoles(['admin']);
+
+        $this->command->info('Admin user created: admin@be / password (role: admin)');
     }
 }
