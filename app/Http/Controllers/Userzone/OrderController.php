@@ -89,4 +89,32 @@ class OrderController extends Controller
 
         return view('userzone.orders.show', compact('order'));
     }
+
+    /**
+     * Recreate a previous order for the same customer — same product,
+     * quantity, unit price and notes. Handy for repeat customers who
+     * order the same thing regularly. Immediately published to RabbitMQ,
+     * just like a normal new order.
+     */
+    public function repeat(Order $order)
+    {
+        $newOrder = Order::create([
+            'customer_id' => $order->customer_id,
+            'product' => $order->product,
+            'quantity' => $order->quantity,
+            'unit_price' => $order->unit_price,
+            'notes' => $order->notes,
+            'status' => 'pending',
+        ]);
+
+        $newOrder->load('customer');
+
+        $published = app(RabbitMQPublisher::class)->publishOrder($newOrder);
+
+        $message = $published
+            ? 'Bestelling #'.$newOrder->id.' aangemaakt (herhaling van #'.$order->id.') en verzonden naar de wachtrij.'
+            : 'Bestelling #'.$newOrder->id.' aangemaakt, maar kon niet naar de wachtrij worden gestuurd.';
+
+        return redirect()->back()->with('success', $message);
+    }
 }
