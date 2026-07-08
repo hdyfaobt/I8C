@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\Userzone\CustomerController;
 use App\Http\Controllers\Userzone\OrderController;
 use App\Http\Controllers\Userzone\ProfileController;
@@ -30,5 +31,15 @@ Route::middleware('auth')->group(function () {
     Route::resource('orders', OrderController::class)
         ->only(['index', 'create', 'store', 'show']);
 });
+
+// Account management — admins only. Lets an admin create accounts for
+// managers/users and assign or change their role.
+Route::middleware(['auth', 'role:admin'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::resource('users', AdminUserController::class)
+            ->except(['show']);
+    });
 
 require __DIR__.'/auth.php';
