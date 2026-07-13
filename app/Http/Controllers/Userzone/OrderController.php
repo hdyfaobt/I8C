@@ -5,20 +5,66 @@ namespace App\Http\Controllers\Userzone;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Product;
+use App\Services\OrderSyncService;
 use App\Services\RabbitMQPublisher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
     /**
+     * Statuses visible to a pure orderpicker — only orders that have
+     * actually reached Salesforce onwards. An orderpicker has nothing to
+     * do with an order that's still awaiting review, queued, refused,
+     * cancelled or failed, so those are hidden from their list entirely.
+     */
+    private const ORDERPICKER_VISIBLE_STATUSES = ['sent', 'ready_for_pickup', 'received'];
+
+    /**
      * Display the list of all orders, newest first.
+     * An orderpicker only sees orders already synced to Salesforce (see
+     * ORDERPICKER_VISIBLE_STATUSES) — receptionist/admin/manager see
+     * everything, since they handle the full lifecycle.
+     *
+     * Cancelled orders are split out into their own $cancelledOrders
+     * collection rather than mixed into $orders — the view renders them in
+     * a separate "Geannuleerde bestellingen" table below the main one, so
+     * a dead-end order doesn't clutter the list of orders that still need
+     * attention, without actually disappearing (its Details link still
+     * works). Reordering it happens from the create-order form instead of
+     * a button here — see CustomerController::orders() and repeat() below.
      */
     public function index()
     {
-        // Eager-load the customer relation to avoid N+1 queries
-        $orders = Order::with('customer')->latest()->get();
+        $isPureOrderpicker = $this->isPureOrderpicker();
 
-        return view('userzone.orders.index', compact('orders'));
+        $query = Order::with(['customer', 'items'])->latest();
+
+        if ($isPureOrderpicker) {
+            $query->whereIn('status', self::ORDERPICKER_VISIBLE_STATUSES);
+        }
+
+        $allOrders = $query->get();
+
+        $orders = $allOrders->reject(fn (Order $order) => $order->status === 'cancelled')->values();
+        $cancelledOrders = $allOrders->filter(fn (Order $order) => $order->status === 'cancelled')->values();
+
+        return view('userzone.orders.index', compact('orders', 'cancelledOrders', 'isPureOrderpicker'));
+    }
+
+    /**
+     * True when the logged-in user is an orderpicker and nothing more
+     * privileged (admin/manager already see everything, so the filter
+     * doesn't apply to them even if they also happen to hold the
+     * orderpicker role).
+     */
+    private function isPureOrderpicker(): bool
+    {
+        $user = Auth::user();
+
+        return $user->hasRole('orderpicker') && ! $user->hasAnyRole(['admin', 'manager']);
     }
 
     /**
