@@ -236,21 +236,30 @@
                 <div class="flex flex-wrap items-center gap-4">
                     {{-- Accept / refuse — while awaiting review. Receptionist/admin/manager
                          only: orderpicker's job starts once the order has already been
-                         accepted and synced to Salesforce (status 'sent'). --}}
+                         accepted and synced to Salesforce (status 'sent'). Accepting syncs
+                         to Salesforce synchronously and can take a moment — "syncing" is
+                         purely visual feedback so the click feels immediate while that
+                         request is in flight. --}}
                     @hasanyrole('receptionist|admin|manager')
                         @if ($order->status === 'awaiting_review')
-                            <form action="{{ route('orders.accept', $order) }}" method="POST">
+                            <form action="{{ route('orders.accept', $order) }}" method="POST"
+                                  x-data="{ syncing: false }" @submit="syncing = true">
                                 @csrf
                                 <button type="submit"
-                                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm">
-                                    Accepteren
+                                        :disabled="syncing"
+                                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm disabled:opacity-50">
+                                    <span x-show="!syncing">Accepteren</span>
+                                    <span x-show="syncing" x-cloak style="display: none;">Bezig...</span>
                                 </button>
                             </form>
-                            <form action="{{ route('orders.refuse', $order) }}" method="POST">
+                            <form action="{{ route('orders.refuse', $order) }}" method="POST"
+                                  x-data="{ syncing: false }" @submit="syncing = true">
                                 @csrf
                                 <button type="submit"
-                                        class="px-4 py-2 bg-red-700 text-white rounded hover:bg-red-800 transition text-sm">
-                                    Weigeren
+                                        :disabled="syncing"
+                                        class="px-4 py-2 bg-red-700 text-white rounded hover:bg-red-800 transition text-sm disabled:opacity-50">
+                                    <span x-show="!syncing">Weigeren</span>
+                                    <span x-show="syncing" x-cloak style="display: none;">Bezig...</span>
                                 </button>
                             </form>
                         @endif
