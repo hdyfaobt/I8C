@@ -12,7 +12,19 @@ class CustomerController extends Controller
 {
     public function index()
     {
-        $customers = Customer::latest()->get();
+        $query = Customer::query();
+
+        $sortable = ['id', 'name', 'company', 'email', 'phone'];
+        $sort = request('sort');
+        $direction = request('direction') === 'desc' ? 'desc' : 'asc';
+
+        if (in_array($sort, $sortable, true)) {
+            $query->orderBy($sort, $direction);
+        } else {
+            $query->latest();
+        }
+
+        $customers = $query->get();
 
         return view('userzone.customers.index', compact('customers'));
     }
