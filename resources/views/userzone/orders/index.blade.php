@@ -37,6 +37,7 @@
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klant</th>
                                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Besteldatum</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
                                     <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
                                 </tr>
                             </thead>
@@ -45,7 +46,7 @@
                                     @include('userzone.orders._row_orderpicker', ['order' => $order])
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="px-6 py-8 text-center text-gray-400">
+                                        <td colspan="5" class="px-6 py-8 text-center text-gray-400">
                                             Geen bestellingen gevonden.
                                         </td>
                                     </tr>
