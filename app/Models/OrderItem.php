@@ -16,6 +16,7 @@ class OrderItem extends Model
 
     protected $fillable = [
         'order_id',
+        'product_id',
         'product',
         'quantity',
         'unit_price',
@@ -35,6 +36,19 @@ class OrderItem extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * The catalog product this line was created from, if any. Nullable —
+     * older order items (created before product_id existed) or a product
+     * later deleted from the catalog (see nullOnDelete() on the
+     * migration) won't have one. The 'product' string field above always
+     * has the name regardless, so display code never needs this relation
+     * just to show a line item.
+     */
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
     }
 
     public function lineTotal(): float
