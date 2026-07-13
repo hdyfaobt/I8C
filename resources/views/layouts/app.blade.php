@@ -144,5 +144,24 @@
         {{ $slot }}
     </main>
 
+    <script>
+        // Keep scroll position across page reloads.
+        (function () {
+            const key = 'scrollY:' + window.location.pathname;
+
+            window.addEventListener('beforeunload', () => {
+                sessionStorage.setItem(key, window.scrollY);
+            });
+
+            const saved = sessionStorage.getItem(key);
+            if (saved !== null) {
+                window.addEventListener('load', () => {
+                    window.scrollTo(0, parseInt(saved, 10));
+                    sessionStorage.removeItem(key);
+                });
+            }
+        })();
+    </script>
+
 </body>
 </html>
