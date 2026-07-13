@@ -66,15 +66,6 @@
             </button>
         </div>
 
-        <div class="mt-6">
-
-            <button type="register"
-            class="w-full py-2.5 px-4 rounded-lg text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-offset-2"
-                    style="background-color: #1e2235; focus-ring-color: #1e2235;">
-                <a href="/register">REGISTER</a>
-            </button>
-        </div>
-
         <!-- Wachtwoord vergeten link -->
         @if (Route::has('password.request'))
             <div class="mt-4 text-center">
