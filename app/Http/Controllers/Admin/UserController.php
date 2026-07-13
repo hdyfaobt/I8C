@@ -18,7 +18,14 @@ class UserController extends Controller
 {
     public function index()
     {
-        $users = User::with('roles')->latest()->get();
+        $sortable = ['id', 'name', 'email'];
+        $sort = request('sort');
+        $direction = request('direction') === 'desc' ? 'desc' : 'asc';
+
+        $query = User::with('roles');
+        $query = in_array($sort, $sortable, true) ? $query->orderBy($sort, $direction) : $query->latest();
+
+        $users = $query->get();
 
         return view('admin.users.index', compact('users'));
     }
