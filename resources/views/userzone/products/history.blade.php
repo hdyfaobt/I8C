@@ -8,9 +8,10 @@
     <div class="py-12">
         <div class="max-w-5xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- Product summary — article number/price + the two headline numbers
-                 this page exists for: how often it's been ordered, and how many
-                 units in total. --}}
+            {{-- Product summary — article number/price + the three headline numbers
+                 this page exists for: how often it's been ordered, how many units
+                 in total, and how much it has actually brought in (see
+                 ProductController::history() for what counts as revenue). --}}
             <div class="bg-white shadow-sm rounded-lg p-6 mb-6">
                 <div class="flex flex-wrap items-center justify-between gap-4">
                     <div>
@@ -26,6 +27,10 @@
                         <div>
                             <p class="text-2xl font-semibold text-indigo-600">{{ $totalQuantity }}</p>
                             <p class="text-xs text-gray-500 uppercase tracking-wider">Stuks totaal</p>
+                        </div>
+                        <div>
+                            <p class="text-2xl font-semibold text-emerald-600">€ {{ number_format($totalRevenue, 2, ',', '.') }}</p>
+                            <p class="text-xs text-gray-500 uppercase tracking-wider">Omzet</p>
                         </div>
                     </div>
                 </div>
