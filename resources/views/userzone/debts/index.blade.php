@@ -26,9 +26,9 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klant</th>
+                            <x-sortable-header column="customer" label="Klant" />
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Openstaande bestellingen</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal verschuldigd</th>
+                            <x-sortable-header column="total" label="Totaal verschuldigd" align="right" />
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
