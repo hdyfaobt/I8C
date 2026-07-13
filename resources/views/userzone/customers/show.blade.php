@@ -7,7 +7,8 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-6">
+        <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-6"
+             x-data="{ deleteModalOpen: false, deleteForm: null }">
 
             {{-- Success message --}}
             @if (session('success'))
@@ -91,11 +92,30 @@
                     <a href="{{ route('customers.index') }}" class="text-indigo-600 hover:text-indigo-900 text-sm">
                         ← Terug naar klanten
                     </a>
-                    <a href="{{ route('customers.edit', $customer) }}" class="text-indigo-600 hover:text-indigo-900 text-sm">
-                        Bewerken
-                    </a>
+                    <div class="flex items-center gap-4">
+                        <a href="{{ route('customers.edit', $customer) }}" class="text-indigo-600 hover:text-indigo-900 text-sm">
+                            Bewerken
+                        </a>
+                        @role('admin')
+                            @if ($customer->orders->isEmpty())
+                                <form action="{{ route('customers.destroy', $customer) }}" method="POST">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="button"
+                                            @click="deleteForm = $el.closest('form'); deleteModalOpen = true"
+                                            class="text-red-600 hover:text-red-900 text-sm">
+                                        Verwijderen
+                                    </button>
+                                </form>
+                            @else
+                                <span class="text-gray-300 text-sm" title="Klant heeft bestellingen">Verwijderen</span>
+                            @endif
+                        @endrole
+                    </div>
                 </div>
             </div>
+
+            <x-confirm-delete-modal message="Klant verwijderen? Dit kan niet ongedaan gemaakt worden." />
 
             {{-- Order history card --}}
             <div class="bg-white overflow-hidden shadow-sm rounded-lg">
