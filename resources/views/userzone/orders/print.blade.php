@@ -16,10 +16,10 @@
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             color: #1f2937;
-            max-width: 800px;
+            max-width: 1000px;
             width: 100%;
             margin: 40px auto;
-            padding: 0 20px;
+            padding: 0 1cm;
         }
         .header {
             display: flex;
