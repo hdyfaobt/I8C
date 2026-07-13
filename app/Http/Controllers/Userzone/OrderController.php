@@ -146,11 +146,7 @@ class OrderController extends Controller
             ->with('success', 'Bestelling #'.$order->id.' aangemaakt en wacht op validatie door een receptionist.');
     }
 
-    /**
-     * Show the details of a single order, including its product lines.
-     * Same visibility rule as index(): a pure orderpicker can't open an
-     * order that hasn't reached Salesforce yet, even by guessing the URL.
-     */
+    // Same visibility rule as index() for orderpickers.
     public function show(Order $order)
     {
         if ($this->isPureOrderpicker() && ! in_array($order->status, self::ORDERPICKER_VISIBLE_STATUSES, true)) {
@@ -159,7 +155,11 @@ class OrderController extends Controller
 
         $order->load(['customer', 'items', 'createdBy', 'preparedBy', 'receivedBy']);
 
-        return view('userzone.orders.show', compact('order'));
+        // Admin/manager always can. Orderpicker only after "Overnemen".
+        $canWorkOnPicking = Auth::user()->hasAnyRole(['admin', 'manager'])
+            || $order->prepared_by === Auth::id();
+
+        return view('userzone.orders.show', compact('order', 'canWorkOnPicking'));
     }
 
     /**
