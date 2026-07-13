@@ -28,14 +28,14 @@ it('syncs an order to Salesforce and marks it as sent', function () {
     $method = $reflection->getMethod('processOrder');
     $method->setAccessible(true);
 
+    // processOrder() only reads 'order_id' and 'customer' from this payload
+    // (for logging) — it re-fetches the order, with its items, straight
+    // from the database for the actual sync.
     $result = $method->invoke($command, [
         'order_id' => $order->id,
         'customer_id' => $customer->id,
         'customer' => $customer->name,
-        'product' => $order->product,
-        'quantity' => $order->quantity,
-        'unit_price' => $order->unit_price,
-        'total' => $order->quantity * $order->unit_price,
+        'total' => $order->totalPrice(),
         'notes' => $order->notes,
         'created_at' => now()->toISOString(),
     ]);
