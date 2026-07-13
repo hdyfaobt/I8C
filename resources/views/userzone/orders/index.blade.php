@@ -130,6 +130,114 @@
                 </table>
             </div>
 
+            {{-- Geannuleerde bestellingen — a cancelled order drops out of the main
+                 table above but isn't hidden entirely: it lands here, still visible
+                 and its Details link still works exactly the same way. Reordering it
+                 is done from the order creation form now (pick the customer there and
+                 reuse one of their past orders) rather than a button on this row.
+                 Only rendered when there's at least one, so it doesn't clutter the
+                 page with an empty section. --}}
+            @if ($cancelledOrders->isNotEmpty())
+                <div class="mt-8">
+                    <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
+                        Geannuleerde bestellingen
+                    </h3>
+                    <div class="bg-white shadow-sm rounded-lg overflow-x-auto opacity-90">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klant</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Besteldatum</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Totaal</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Betaling</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach ($cancelledOrders as $order)
+                                    @include('userzone.orders._row', ['order' => $order])
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
+            {{-- Custom payment confirmation alert — replaces the native browser
+                 confirm() popup with a translucent, colored alert that matches
+                 the site's look: green while confirming a payment (asks for the
+                 payment method too), orange while undoing one. Shared by every
+                 row's "Betaling" button above, in both tables. --}}
+            <div x-show="paymentModalOpen"
+                 x-cloak
+                 style="display: none;"
+                 @click.self="paymentModalOpen = false"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 px-4">
+                <div x-show="paymentModalOpen"
+                     x-transition
+                     class="w-full max-w-sm rounded-xl border p-6 shadow-lg backdrop-blur-sm"
+                     :class="paymentMode === 'pay'
+                        ? 'bg-green-100/80 border-green-300'
+                        : 'bg-orange-100/80 border-orange-300'">
+
+                    {{-- Marking as paid — pick a payment method first --}}
+                    <template x-if="paymentMode === 'pay'">
+                        <div>
+                            <p class="text-sm font-medium text-green-800">
+                                Bevestig: hoe werd deze bestelling betaald?
+                            </p>
+                            <div class="mt-4 flex flex-col gap-2">
+                                <button type="button"
+                                        @click="paymentForm.querySelector('[name=payment_method]').value = 'bank_transfer'; paymentForm.submit(); paymentModalOpen = false"
+                                        class="px-3 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition">
+                                    Overschrijving / Bancontact
+                                </button>
+                                <button type="button"
+                                        @click="paymentForm.querySelector('[name=payment_method]').value = 'cash'; paymentForm.submit(); paymentModalOpen = false"
+                                        class="px-3 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition">
+                                    Cash
+                                </button>
+                            </div>
+                            <div class="mt-3 flex justify-end">
+                                <button type="button"
+                                        @click="paymentModalOpen = false"
+                                        class="px-3 py-1.5 rounded text-xs font-medium bg-white text-gray-700 hover:bg-gray-50 transition border border-gray-300">
+                                    Annuleren
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Undoing a payment — manager/admin only, plain confirm --}}
+                    <template x-if="paymentMode === 'revert'">
+                        <div>
+                            <p class="text-sm font-medium text-orange-800">
+                                Bevestig: deze bestelling markeren als NIET betaald?
+                            </p>
+                            <div class="mt-4 flex justify-end gap-2">
+                                <button type="button"
+                                        @click="paymentModalOpen = false"
+                                        class="px-3 py-1.5 rounded text-xs font-medium bg-white text-gray-700 hover:bg-gray-50 transition border border-gray-300">
+                                    Annuleren
+                                </button>
+                                <button type="button"
+                                        @click="paymentForm.submit(); paymentModalOpen = false"
+                                        class="px-3 py-1.5 rounded text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 transition">
+                                    Bevestigen
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            </div>
+            @endif
+
         </div>
     </div>
 </x-app-layout>
