@@ -122,8 +122,13 @@ class CustomerController extends Controller
             ->with('success', 'Klant succesvol bijgewerkt.');
     }
 
+    // Blocked if the customer has orders — sales history must stay.
     public function destroy(Customer $customer)
     {
+        if ($customer->orders()->exists()) {
+            return back()->with('error', 'Kan geen klant met bestellingen verwijderen.');
+        }
+
         $customer->delete();
 
         return redirect()->route('customers.index')
