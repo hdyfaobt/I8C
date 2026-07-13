@@ -213,6 +213,11 @@ class OrderController extends Controller
             return redirect()->back()->with('success', 'Bestelling #'.$order->id.' staat niet meer "wacht op validatie" en kan niet meer geaccepteerd worden.');
         }
 
+        // Can't accept an order with no products at all.
+        if ($order->items()->count() === 0) {
+            return redirect()->back()->with('error', 'Bestelling #'.$order->id.' heeft geen producten en kan niet geaccepteerd worden. Verwijder ze in plaats daarvan.');
+        }
+
         $order->update(['status' => 'pending', 'accepted_at' => now()]);
 
         $order->load(['customer', 'items']);
@@ -300,6 +305,16 @@ class OrderController extends Controller
         $order->update(['status' => 'cancelled', 'cancelled_at' => now()]);
 
         return redirect()->back()->with('success', 'Bestelling #'.$order->id.' geannuleerd.');
+    }
+
+    // Admin only, e.g. to clean up an empty/broken order.
+    public function destroy(Order $order)
+    {
+        $orderId = $order->id;
+
+        $order->delete();
+
+        return redirect()->route('orders.index')->with('success', 'Bestelling #'.$orderId.' definitief verwijderd.');
     }
 
     /**
