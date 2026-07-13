@@ -158,7 +158,7 @@ class SalesforceService
             'CloseDate' => now()->addDays(30)->format('Y-m-d'),
             'Amount' => $order->totalPrice(),
             'AccountId' => $accountId,
-            'Description' => $order->notes ?? '',
+            'Description' => $description,
         ]);
 
         Log::info("[Salesforce] Opportunity created: {$response['id']} for order #{$order->id}");
