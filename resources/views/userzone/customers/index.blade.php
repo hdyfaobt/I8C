@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="{ deleteModalOpen: false, deleteForm: null }">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             {{-- Success message --}}
             @if (session('success'))
@@ -91,16 +91,6 @@
 
                                     <a href="{{ route('customers.edit', $customer) }}"
                                        class="text-indigo-600 hover:text-indigo-900">Bewerken</a>
-
-                                    <form action="{{ route('customers.destroy', $customer) }}" method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button"
-                                                @click="deleteForm = $el.closest('form'); deleteModalOpen = true"
-                                                class="text-red-600 hover:text-red-900">
-                                            Verwijderen
-                                        </button>
-                                    </form>
                                 </td>
                             </tr>
                         @empty
@@ -113,8 +103,6 @@
                     </tbody>
                 </table>
             </div>
-
-            <x-confirm-delete-modal message="Klant verwijderen? Dit kan niet ongedaan gemaakt worden." />
 
         </div>
     </div>
