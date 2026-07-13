@@ -15,6 +15,12 @@
                 </div>
             @endif
 
+            @if (session('error'))
+                <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             @if ($isPureOrderpicker)
                 {{-- Orderpicker gets a deliberately stripped-down page: only what
                      they need (klant, datum, details, overnemen). No status/
