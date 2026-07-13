@@ -4,6 +4,7 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\RabbitMQPublisher;
+use Database\Seeders\RoleSeeder;
 
 // ---------------------------------------------------------------------------
 // Order repeat — recreate a previous order for the same customer
@@ -14,18 +15,27 @@ beforeEach(function () {
     $this->mock(RabbitMQPublisher::class, function ($mock) {
         $mock->shouldReceive('publishOrder')->andReturn(true);
     });
+
+    // orders.repeat is restricted to receptionist/admin/manager.
+    $this->seed(RoleSeeder::class);
 });
 
 test('repeating an order creates a new order with the same details', function () {
     $user = User::factory()->create();
+    $user->assignRole('receptionist');
+
     $customer = Customer::factory()->create();
     $original = Order::factory()->create([
         'customer_id' => $customer->id,
+        'notes' => 'Vaste klant',
+        'status' => 'sent',
+    ]);
+    // Replace the factory's random default item with a known one.
+    $original->items()->delete();
+    $original->items()->create([
         'product' => 'Salami XL',
         'quantity' => 5,
         'unit_price' => 12.50,
-        'notes' => 'Vaste klant',
-        'status' => 'sent',
     ]);
 
     $response = $this->actingAs($user)->post(route('orders.repeat', $original));
@@ -36,10 +46,13 @@ test('repeating an order creates a new order with the same details', function ()
 
     expect($newOrder)->not->toBeNull();
     expect($newOrder->customer_id)->toBe($customer->id);
-    expect($newOrder->product)->toBe('Salami XL');
-    expect($newOrder->quantity)->toBe(5);
-    expect((float) $newOrder->unit_price)->toBe(12.50);
-    expect($newOrder->status)->toBe('pending');
+    expect($newOrder->items)->toHaveCount(1);
+    expect($newOrder->items->first()->product)->toBe('Salami XL');
+    expect($newOrder->items->first()->quantity)->toBe(5);
+    expect((float) $newOrder->items->first()->unit_price)->toBe(12.50);
+    // A repeated order goes through review again, just like a brand new one —
+    // it is not published to RabbitMQ until a receptionist accepts it.
+    expect($newOrder->status)->toBe('awaiting_review');
 });
 
 test('repeating an order requires authentication', function () {
@@ -49,4 +62,16 @@ test('repeating an order requires authentication', function () {
     $response = $this->post(route('orders.repeat', $order));
 
     $response->assertRedirect(route('login'));
+});
+
+test('repeating an order requires the receptionist, admin or manager role', function () {
+    $user = User::factory()->create();
+    $user->assignRole('orderpicker');
+
+    $customer = Customer::factory()->create();
+    $order = Order::factory()->create(['customer_id' => $customer->id]);
+
+    $response = $this->actingAs($user)->post(route('orders.repeat', $order));
+
+    $response->assertForbidden();
 });
