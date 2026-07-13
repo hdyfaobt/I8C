@@ -150,7 +150,6 @@
                                 <th class="pb-1">Aantal</th>
                                 <th class="pb-1">Prijs</th>
                                 <th class="pb-1">Subtotaal</th>
-                                {{-- Orderpicker/admin/manager can tick items off as picked, or report them out of stock --}}
                                 @hasanyrole('orderpicker|admin|manager')
                                     <th class="pb-1 text-right">Status</th>
                                 @endhasanyrole
@@ -165,13 +164,8 @@
                                     <td class="py-2">€ {{ number_format($item->lineTotal(), 2, ',', '.') }}</td>
                                     @hasanyrole('orderpicker|admin|manager')
                                         <td class="py-2 text-right">
-                                            {{-- Only actionable once the order has actually been synced to Salesforce --}}
-                                            @if ($order->status === 'sent' || $order->status === 'ready_for_pickup')
+                                            @if (($order->status === 'sent' || $order->status === 'ready_for_pickup') && $canWorkOnPicking)
                                                 <div class="flex items-center justify-end gap-1">
-                                                    {{-- Two fixed-color action buttons, not a single toggle: "Opgehaald"
-                                                         is always green, "Niet beschikbaar" is always red. Whichever one
-                                                         is currently the item's actual state shows solid/filled; the
-                                                         other stays a light/transparent version of its own color. --}}
                                                     <form action="{{ route('orders.items.pick', [$order, $item]) }}" method="POST" class="inline">
                                                         @csrf
                                                         <button type="submit"
@@ -179,8 +173,6 @@
                                                             Opgehaald
                                                         </button>
                                                     </form>
-                                                    {{-- Report this item out of stock instead — auto-adds a refund
-                                                         note for the customer, see OrderController::markItemOutOfStock() --}}
                                                     <form action="{{ route('orders.items.outOfStock', [$order, $item]) }}" method="POST" class="inline">
                                                         @csrf
                                                         <button type="submit"
@@ -189,6 +181,10 @@
                                                         </button>
                                                     </form>
                                                 </div>
+                                            @elseif ($item->isPicked())
+                                                <span class="text-xs text-green-600">Opgehaald</span>
+                                            @elseif ($item->isOutOfStock())
+                                                <span class="text-xs text-red-600">Niet beschikbaar</span>
                                             @else
                                                 <span class="text-gray-300 text-xs">—</span>
                                             @endif
@@ -206,7 +202,7 @@
                 <div>
                     <p class="text-gray-500 text-sm mb-2">Opmerking van de orderpicker</p>
                     @hasanyrole('orderpicker|admin|manager')
-                        @if ($order->status === 'sent' || $order->status === 'ready_for_pickup')
+                        @if (($order->status === 'sent' || $order->status === 'ready_for_pickup') && $canWorkOnPicking)
                             <form action="{{ route('orders.pickingComment', $order) }}" method="POST" class="space-y-2">
                                 @csrf
                                 <textarea name="picking_comment" rows="2"
@@ -267,7 +263,7 @@
 
                     {{-- Orderpicker: confirm the order is fully picked and ready for pickup --}}
                     @hasanyrole('orderpicker|admin|manager')
-                        @if ($order->status === 'sent')
+                        @if ($order->status === 'sent' && $canWorkOnPicking)
                             <form action="{{ route('orders.ready', $order) }}" method="POST">
                                 @csrf
                                 <button type="submit"
@@ -279,10 +275,11 @@
                             @unless ($order->allItemsResolved())
                                 <span class="text-xs text-gray-400">Markeer eerst alle producten als opgehaald of niet op voorraad.</span>
                             @endunless
+                        @elseif ($order->status === 'sent' && ! $canWorkOnPicking)
+                            <span class="text-xs text-gray-400">Neem deze bestelling over om te beginnen.</span>
                         @endif
                     @endhasanyrole
 
-                    {{-- Receptionist/admin/manager: everything else in the order lifecycle --}}
                     @hasanyrole('receptionist|admin|manager')
                         @if (in_array($order->status, ['awaiting_review', 'pending'], true))
                             <form action="{{ route('orders.cancel', $order) }}" method="POST">
