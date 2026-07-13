@@ -54,25 +54,76 @@
                         <p class="font-medium">{{ $order->customer->name }}</p>
                     </div>
                     <div>
+                        <p class="text-gray-500">Klantnummer</p>
+                        <p class="font-medium font-mono">{{ $order->customer->customerNumber() }}</p>
+                    </div>
+                    <div>
                         <p class="text-gray-500">Bedrijf</p>
                         <p class="font-medium">{{ $order->customer->company ?? '—' }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Product</p>
-                        <p class="font-medium">{{ $order->product }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Aantal</p>
-                        <p class="font-medium">{{ $order->quantity }}</p>
-                    </div>
-                    <div>
-                        <p class="text-gray-500">Eenheidsprijs</p>
-                        <p class="font-medium">€ {{ number_format($order->unit_price, 2, ',', '.') }}</p>
                     </div>
                     <div>
                         <p class="text-gray-500">Totaal</p>
                         <p class="font-medium text-indigo-600">€ {{ number_format($order->totalPrice(), 2, ',', '.') }}</p>
                     </div>
+                    <div>
+                        <p class="text-gray-500">Besteldatum</p>
+                        <p class="font-medium">{{ $order->created_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    @if ($order->accepted_at)
+                    <div>
+                        <p class="text-gray-500">Geaccepteerd op</p>
+                        <p class="font-medium">{{ $order->accepted_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    @endif
+                    @if ($order->status === 'sent' && $order->sent_at)
+                    <div>
+                        <p class="text-gray-500">Verzonden op</p>
+                        <p class="font-medium">{{ $order->sent_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    @elseif ($order->status === 'failed' && $order->failed_at)
+                    <div>
+                        <p class="text-gray-500">Mislukt op</p>
+                        <p class="font-medium">{{ $order->failed_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    @elseif ($order->status === 'refused' && $order->refused_at)
+                    <div>
+                        <p class="text-gray-500">Geweigerd op</p>
+                        <p class="font-medium">{{ $order->refused_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    @elseif ($order->status === 'cancelled' && $order->cancelled_at)
+                    <div>
+                        <p class="text-gray-500">Geannuleerd op</p>
+                        <p class="font-medium">{{ $order->cancelled_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    @elseif ($order->status === 'ready_for_pickup' && $order->ready_at)
+                    <div>
+                        <p class="text-gray-500">Klaar op</p>
+                        <p class="font-medium">{{ $order->ready_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    @elseif ($order->status === 'received' && $order->received_at)
+                    <div>
+                        <p class="text-gray-500">Ontvangen op</p>
+                        <p class="font-medium">{{ $order->received_at->format('d/m/Y H:i') }}</p>
+                    </div>
+                    @endif
+
+                    {{-- Who did what — the three key hand-offs in this order's
+                         lifecycle. Each is only filled in once that step has
+                         actually happened (see OrderController::store()/repeat(),
+                         markReady(), markReceived()). --}}
+                    <div>
+                        <p class="text-gray-500">Besteld door</p>
+                        <p class="font-medium">{{ $order->createdBy->name ?? '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Voorbereid door</p>
+                        <p class="font-medium">{{ $order->preparedBy->name ?? '—' }}</p>
+                    </div>
+                    <div>
+                        <p class="text-gray-500">Afgeleverd door</p>
+                        <p class="font-medium">{{ $order->receivedBy->name ?? '—' }}</p>
+                    </div>
+
                     @if ($order->salesforce_id)
                     <div class="col-span-2">
                         <p class="text-gray-500">Salesforce ID</p>
