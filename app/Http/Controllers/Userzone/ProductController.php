@@ -18,7 +18,11 @@ class ProductController extends Controller
      */
     public function index()
     {
-        $products = Product::orderBy('name')->get();
+        $sortable = ['id', 'article_number', 'name', 'price'];
+        $sort = request('sort');
+        $direction = request('direction') === 'desc' ? 'desc' : 'asc';
+
+        $products = Product::orderBy(in_array($sort, $sortable, true) ? $sort : 'name', $direction)->get();
 
         return view('userzone.products.index', compact('products'));
     }
