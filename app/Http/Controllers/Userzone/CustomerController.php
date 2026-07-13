@@ -63,30 +63,49 @@ class CustomerController extends Controller
     }
 
     /**
-     * Display the details of a single customer, including their order history.
+     * List a customer's past orders (AJAX/JSON), for the "previous orders"
+     * panel on the order creation form — see resources/views/layouts/
+     * app.blade.php (customerSearch Alpine component). This replaced the
+     * old per-row "Herbestellen" button on the orders list: reordering now
+     * happens right where you're already picking a customer, instead of
+     * hunting through the whole orders list for the right one to copy.
+     *
+     * No status filter — a cancelled/refused order still shows up here,
+     * it's just history, same reasoning as ProductController::history().
+     * Capped at the 10 most recent so this stays a quick glance, not a
+     * second full order list.
      */
+    public function orders(Customer $customer)
+    {
+        $orders = $customer->orders()
+            ->with('items')
+            ->latest()
+            ->limit(10)
+            ->get()
+            ->map(fn (Order $order) => [
+                'id' => $order->id,
+                'created_at' => $order->created_at->format('d/m/Y'),
+                'items_summary' => $order->items->pluck('product')->join(', '),
+                'total' => number_format($order->totalPrice(), 2, ',', '.'),
+            ]);
+
+        return response()->json($orders);
+    }
+
     public function show(Customer $customer)
     {
-        // Eager-load the customer's orders, newest first
         $customer->load(['orders' => function ($query) {
-            $query->latest();
+            $query->latest()->with('items');
         }]);
 
         return view('userzone.customers.show', compact('customer'));
     }
 
-    /**
-     * Show the form to edit an existing customer.
-     */
     public function edit(Customer $customer)
     {
-        // Laravel auto-resolves $customer via route model binding
         return view('userzone.customers.edit', compact('customer'));
     }
 
-    /**
-     * Validate and update an existing customer.
-     */
     public function update(Request $request, Customer $customer)
     {
         $validated = $request->validate([
