@@ -11,14 +11,11 @@ use Spatie\Permission\Models\Role;
 
 /**
  * Admin-only account management: create, edit and remove user accounts
- * and assign them a role (admin / manager / user).
+ * and assign them a role (admin / manager / receptionist / orderpicker).
  * Access is restricted by the "role:admin" middleware on the route group.
  */
 class UserController extends Controller
 {
-    /**
-     * List all accounts with their current role.
-     */
     public function index()
     {
         $users = User::with('roles')->latest()->get();
@@ -26,9 +23,6 @@ class UserController extends Controller
         return view('admin.users.index', compact('users'));
     }
 
-    /**
-     * Show the form to create a new account.
-     */
     public function create()
     {
         $roles = Role::orderBy('name')->pluck('name');
@@ -61,9 +55,6 @@ class UserController extends Controller
             ->with('success', "Account voor {$user->name} aangemaakt met rol \"{$validated['role']}\".");
     }
 
-    /**
-     * Show the form to edit an existing account's role.
-     */
     public function edit(User $user)
     {
         $roles = Role::orderBy('name')->pluck('name');
