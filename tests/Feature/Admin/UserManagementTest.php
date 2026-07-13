@@ -23,7 +23,7 @@ test('admin can view the accounts list', function () {
 
 test('non-admin roles cannot access account management', function () {
     $user = User::factory()->create();
-    $user->assignRole('user');
+    $user->assignRole('receptionist');
 
     $response = $this->actingAs($user)->get(route('admin.users.index'));
 
@@ -74,7 +74,7 @@ test('admin can change an existing account role', function () {
     $admin->assignRole('admin');
 
     $target = User::factory()->create();
-    $target->assignRole('user');
+    $target->assignRole('receptionist');
 
     $response = $this->actingAs($admin)->put(route('admin.users.update', $target), [
         'name' => $target->name,
@@ -84,7 +84,7 @@ test('admin can change an existing account role', function () {
 
     $response->assertRedirect(route('admin.users.index'));
     expect($target->fresh()->hasRole('manager'))->toBeTrue();
-    expect($target->fresh()->hasRole('user'))->toBeFalse();
+    expect($target->fresh()->hasRole('receptionist'))->toBeFalse();
 });
 
 test('admin cannot delete their own account', function () {
@@ -102,7 +102,7 @@ test('admin can delete another account', function () {
     $admin->assignRole('admin');
 
     $target = User::factory()->create();
-    $target->assignRole('user');
+    $target->assignRole('receptionist');
 
     $response = $this->actingAs($admin)->delete(route('admin.users.destroy', $target));
 
