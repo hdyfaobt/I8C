@@ -70,6 +70,11 @@ Route::middleware(['auth', 'role:admin|manager'])->group(function () {
     Route::resource('products', ProductController::class)->except(['index', 'show']);
 });
 
+// Permanent order deletion — admin only
+Route::middleware(['auth', 'role:admin'])->group(function () {
+    Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+});
+
 // Admin — user management
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
