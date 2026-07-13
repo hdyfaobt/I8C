@@ -16,7 +16,13 @@ class RoleSeeder extends Seeder
     protected array $roles = [
         'admin',
         'manager',
-        'user',
+        // Can create customers/orders, cancel or reorder, review
+        // (accept/refuse) newly placed orders, and confirm the customer
+        // received their order (see OrderController).
+        'receptionist',
+        // Can view orders, pick individual order items, leave a picking
+        // comment and mark an order ready for pickup (see OrderController).
+        'orderpicker',
     ];
 
     /**
