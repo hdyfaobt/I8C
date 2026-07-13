@@ -17,7 +17,8 @@
                     <div class="mb-4"
                          x-data="customerSearch(
                              @js($selectedCustomer),
-                             @js(route('customers.search'))
+                             @js(route('customers.search')),
+                             @js(route('customers.orders', ['customer' => '__ID__']))
                          )">
                         <label class="block text-sm font-medium text-gray-700 mb-1">Klant *</label>
 
@@ -29,7 +30,7 @@
                                    @click.outside="open = false"
                                    autocomplete="off"
                                    placeholder="Zoek op naam, e-mail of bedrijf..."
-                                   class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+                                   class="w-full rounded border-2 border-gray-300 px-4 py-2.5 shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
 
                             {{-- Actual value submitted with the form --}}
                             <input type="hidden" name="customer_id" x-model="selectedId">
