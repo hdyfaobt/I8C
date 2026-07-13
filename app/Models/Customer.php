@@ -30,4 +30,14 @@ class Customer extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    /**
+     * A human-friendly customer number, derived from the id — same idea as
+     * Order::invoiceNumber(). Purely presentational, not stored, so it never
+     * needs to be kept in sync separately.
+     */
+    public function customerNumber(): string
+    {
+        return 'KLT-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
+    }
 }
