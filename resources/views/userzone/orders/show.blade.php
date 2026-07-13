@@ -140,9 +140,287 @@
 
                 <hr>
 
+                {{-- Product lines --}}
+                <div>
+                    <p class="text-gray-500 text-sm mb-2">Producten</p>
+                    <table class="min-w-full text-sm">
+                        <thead>
+                            <tr class="text-left text-xs text-gray-400 uppercase">
+                                <th class="pb-1">Product</th>
+                                <th class="pb-1">Aantal</th>
+                                <th class="pb-1">Prijs</th>
+                                <th class="pb-1">Subtotaal</th>
+                                {{-- Orderpicker/admin/manager can tick items off as picked, or report them out of stock --}}
+                                @hasanyrole('orderpicker|admin|manager')
+                                    <th class="pb-1 text-right">Status</th>
+                                @endhasanyrole
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach ($order->items as $item)
+                                <tr>
+                                    <td class="py-2">{{ $item->product }}</td>
+                                    <td class="py-2">{{ $item->quantity }}</td>
+                                    <td class="py-2">€ {{ number_format($item->unit_price, 2, ',', '.') }}</td>
+                                    <td class="py-2">€ {{ number_format($item->lineTotal(), 2, ',', '.') }}</td>
+                                    @hasanyrole('orderpicker|admin|manager')
+                                        <td class="py-2 text-right">
+                                            {{-- Only actionable once the order has actually been synced to Salesforce --}}
+                                            @if ($order->status === 'sent' || $order->status === 'ready_for_pickup')
+                                                <div class="flex items-center justify-end gap-1">
+                                                    {{-- Two fixed-color action buttons, not a single toggle: "Opgehaald"
+                                                         is always green, "Niet beschikbaar" is always red. Whichever one
+                                                         is currently the item's actual state shows solid/filled; the
+                                                         other stays a light/transparent version of its own color. --}}
+                                                    <form action="{{ route('orders.items.pick', [$order, $item]) }}" method="POST" class="inline">
+                                                        @csrf
+                                                        <button type="submit"
+                                                                class="px-2 py-1 rounded text-xs whitespace-nowrap {{ $item->isPicked() ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-green-100/70 text-green-700 hover:bg-green-100' }}">
+                                                            Opgehaald
+                                                        </button>
+                                                    </form>
+                                                    {{-- Report this item out of stock instead — auto-adds a refund
+                                                         note for the customer, see OrderController::markItemOutOfStock() --}}
+                                                    <form action="{{ route('orders.items.outOfStock', [$order, $item]) }}" method="POST" class="inline">
+                                                        @csrf
+                                                        <button type="submit"
+                                                                class="px-2 py-1 rounded text-xs whitespace-nowrap {{ $item->isOutOfStock() ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-red-100/70 text-red-700 hover:bg-red-100' }}">
+                                                            Niet beschikbaar
+                                                        </button>
+                                                    </form>
+                                                </div>
+                                            @else
+                                                <span class="text-gray-300 text-xs">—</span>
+                                            @endif
+                                        </td>
+                                    @endhasanyrole
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                {{-- Picking comment — left by the orderpicker while preparing the order --}}
+                @if ($order->picking_comment || $order->status === 'sent')
+                <hr>
+                <div>
+                    <p class="text-gray-500 text-sm mb-2">Opmerking van de orderpicker</p>
+                    @hasanyrole('orderpicker|admin|manager')
+                        @if ($order->status === 'sent' || $order->status === 'ready_for_pickup')
+                            <form action="{{ route('orders.pickingComment', $order) }}" method="POST" class="space-y-2">
+                                @csrf
+                                <textarea name="picking_comment" rows="2"
+                                          class="w-full border-gray-300 rounded-md shadow-sm text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                                          placeholder="Bv. product X niet op voorraad, vervangen door Y...">{{ old('picking_comment', $order->picking_comment) }}</textarea>
+                                <button type="submit"
+                                        class="px-3 py-1.5 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition text-xs">
+                                    Opmerking opslaan
+                                </button>
+                            </form>
+                        @elseif ($order->picking_comment)
+                            <p class="text-sm">{{ $order->picking_comment }}</p>
+                        @endif
+                    @else
+                        @if ($order->picking_comment)
+                            <p class="text-sm">{{ $order->picking_comment }}</p>
+                        @else
+                            <p class="text-sm text-gray-400">—</p>
+                        @endif
+                    @endhasanyrole
+                </div>
+                @endif
+
+                <hr>
+
+                {{-- Actions --}}
+                <div class="flex flex-wrap items-center gap-4">
+                    {{-- Accept / refuse — while awaiting review. Receptionist/admin/manager
+                         only: orderpicker's job starts once the order has already been
+                         accepted and synced to Salesforce (status 'sent'). --}}
+                    @hasanyrole('receptionist|admin|manager')
+                        @if ($order->status === 'awaiting_review')
+                            <form action="{{ route('orders.accept', $order) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition text-sm">
+                                    Accepteren
+                                </button>
+                            </form>
+                            <form action="{{ route('orders.refuse', $order) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        class="px-4 py-2 bg-red-700 text-white rounded hover:bg-red-800 transition text-sm">
+                                    Weigeren
+                                </button>
+                            </form>
+                        @endif
+                    @endhasanyrole
+
+                    {{-- Orderpicker: confirm the order is fully picked and ready for pickup --}}
+                    @hasanyrole('orderpicker|admin|manager')
+                        @if ($order->status === 'sent')
+                            <form action="{{ route('orders.ready', $order) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        @unless ($order->allItemsResolved()) disabled @endunless
+                                        class="px-4 py-2 rounded transition text-sm {{ $order->allItemsResolved() ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-gray-200 text-gray-400 cursor-not-allowed' }}">
+                                    Klaar om op te halen
+                                </button>
+                            </form>
+                            @unless ($order->allItemsResolved())
+                                <span class="text-xs text-gray-400">Markeer eerst alle producten als opgehaald of niet op voorraad.</span>
+                            @endunless
+                        @endif
+                    @endhasanyrole
+
+                    {{-- Receptionist/admin/manager: everything else in the order lifecycle --}}
+                    @hasanyrole('receptionist|admin|manager')
+                        @if (in_array($order->status, ['awaiting_review', 'pending'], true))
+                            <form action="{{ route('orders.cancel', $order) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition text-sm">
+                                    Annuleren
+                                </button>
+                            </form>
+                        @endif
+
+                        @if (in_array($order->status, ['failed', 'pending'], true))
+                            <form action="{{ route('orders.retry', $order) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        class="px-4 py-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition text-sm">
+                                    Opnieuw proberen
+                                </button>
+                            </form>
+                        @endif
+
+                        @if ($order->status === 'ready_for_pickup')
+                            <form action="{{ route('orders.received', $order) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                        class="px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700 transition text-sm">
+                                    Bevestig ontvangst door klant
+                                </button>
+                            </form>
+                        @endif
+
+                        {{-- Toggle "paid" — independent from the status lifecycle, can be
+                             clicked at any point regardless of where the order is above.
+                             Reads "Betalen" before payment (opens the site's own confirmation
+                             alert asking for a payment method), turns into "Betaald" once
+                             clicked. Undoing a payment (once already paid) is admin/manager
+                             only — a receptionist sees a read-only badge instead, see
+                             OrderController::togglePaid() for the same rule server-side.
+                             A cancelled order can never be paid — nothing to collect
+                             payment for, see the same guard in togglePaid(). --}}
+                        @if ($order->status === 'cancelled')
+                            <span class="px-4 py-2 rounded text-sm bg-gray-100 text-gray-400">Niet van toepassing</span>
+                        @elseif ($order->paid)
+                            @hasanyrole('admin|manager')
+                                <form action="{{ route('orders.togglePaid', $order) }}" method="POST">
+                                    @csrf
+                                    <input type="hidden" name="payment_method">
+                                    <button type="button"
+                                            @click="paymentForm = $el.closest('form'); paymentMode = 'revert'; paymentModalOpen = true"
+                                            class="px-4 py-2 rounded transition text-sm bg-emerald-600 text-white hover:bg-emerald-700">
+                                        Betaald ✓
+                                    </button>
+                                </form>
+                            @else
+                                <span class="px-4 py-2 rounded text-sm bg-emerald-100 text-emerald-700">Betaald ✓</span>
+                            @endhasanyrole
+                        @else
+                            <form action="{{ route('orders.togglePaid', $order) }}" method="POST">
+                                @csrf
+                                <input type="hidden" name="payment_method">
+                                <button type="button"
+                                        @click="paymentForm = $el.closest('form'); paymentMode = 'pay'; paymentModalOpen = true"
+                                        class="px-4 py-2 rounded transition text-sm bg-indigo-600 text-white hover:bg-indigo-700">
+                                    Betalen
+                                </button>
+                            </form>
+                        @endif
+
+                        {{-- Print a printable invoice sheet in a new tab --}}
+                        <a href="{{ route('orders.print', $order) }}" target="_blank"
+                           class="inline-flex items-center gap-1.5 whitespace-nowrap px-4 py-2 bg-gray-700 text-white rounded hover:bg-gray-800 transition text-sm">
+                            <span>🖨</span><span>Print factuur</span>
+                        </a>
+                    @endhasanyrole
+                </div>
+
+                <hr>
+
                 <a href="{{ route('orders.index') }}" class="text-indigo-600 hover:text-indigo-900 text-sm">
                     ← Terug naar bestellingen
                 </a>
+            </div>
+
+            {{-- Custom payment confirmation alert — same component as orders/index.blade.php.
+                 Green while confirming a payment (asks for the payment method too), orange
+                 while undoing one. Replaces the native browser confirm() popup. --}}
+            <div x-show="paymentModalOpen"
+                 x-cloak
+                 style="display: none;"
+                 @click.self="paymentModalOpen = false"
+                 class="fixed inset-0 z-50 flex items-center justify-center bg-black/20 px-4">
+                <div x-show="paymentModalOpen"
+                     x-transition
+                     class="w-full max-w-sm rounded-xl border p-6 shadow-lg backdrop-blur-sm"
+                     :class="paymentMode === 'pay'
+                        ? 'bg-green-100/80 border-green-300'
+                        : 'bg-orange-100/80 border-orange-300'">
+
+                    {{-- Marking as paid — pick a payment method first --}}
+                    <template x-if="paymentMode === 'pay'">
+                        <div>
+                            <p class="text-sm font-medium text-green-800">
+                                Bevestig: hoe werd deze bestelling betaald?
+                            </p>
+                            <div class="mt-4 flex flex-col gap-2">
+                                <button type="button"
+                                        @click="paymentForm.querySelector('[name=payment_method]').value = 'bank_transfer'; paymentForm.submit(); paymentModalOpen = false"
+                                        class="px-3 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition">
+                                    Overschrijving / Bancontact
+                                </button>
+                                <button type="button"
+                                        @click="paymentForm.querySelector('[name=payment_method]').value = 'cash'; paymentForm.submit(); paymentModalOpen = false"
+                                        class="px-3 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition">
+                                    Cash
+                                </button>
+                            </div>
+                            <div class="mt-3 flex justify-end">
+                                <button type="button"
+                                        @click="paymentModalOpen = false"
+                                        class="px-3 py-1.5 rounded text-xs font-medium bg-white text-gray-700 hover:bg-gray-50 transition border border-gray-300">
+                                    Annuleren
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    {{-- Undoing a payment — admin/manager only, plain confirm --}}
+                    <template x-if="paymentMode === 'revert'">
+                        <div>
+                            <p class="text-sm font-medium text-orange-800">
+                                Bevestig: deze bestelling markeren als NIET betaald?
+                            </p>
+                            <div class="mt-4 flex justify-end gap-2">
+                                <button type="button"
+                                        @click="paymentModalOpen = false"
+                                        class="px-3 py-1.5 rounded text-xs font-medium bg-white text-gray-700 hover:bg-gray-50 transition border border-gray-300">
+                                    Annuleren
+                                </button>
+                                <button type="button"
+                                        @click="paymentForm.submit(); paymentModalOpen = false"
+                                        class="px-3 py-1.5 rounded text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 transition">
+                                    Bevestigen
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+                </div>
             </div>
         </div>
     </div>
