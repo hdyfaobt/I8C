@@ -117,13 +117,15 @@
         </div>
     </td>
 
+    <td class="px-6 py-4 text-sm text-center">
+        <a href="{{ route('orders.show', $order) }}"
+           class="px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">
+            Details
+        </a>
+    </td>
+
     <td class="px-6 py-4 text-sm">
         <div class="flex flex-wrap items-center justify-end gap-2">
-            <a href="{{ route('orders.show', $order) }}"
-               class="px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">
-                Details
-            </a>
-
             {{-- Accept / refuse — receptionist/admin/manager only. Orderpicker
                  never sees these orders at all (see OrderController::index() filter).
                  Accepting syncs to Salesforce synchronously and can take a moment —
