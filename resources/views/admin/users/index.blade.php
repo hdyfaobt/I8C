@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="{ deleteModalOpen: false, deleteForm: null }">
 
             {{-- Success message --}}
             @if (session('success'))
@@ -54,7 +54,8 @@
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
                                     @foreach ($user->roles as $role)
                                         <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">
-                                            {{ $role->name }}
+                                            {{-- Capitalized for display only — the stored role name stays lowercase --}}
+                                            {{ ucfirst($role->name) }}
                                         </span>
                                     @endforeach
                                     @if ($user->roles->isEmpty())
@@ -64,17 +65,16 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                    {{-- Edit button --}}
                                     <a href="{{ route('admin.users.edit', $user) }}"
                                        class="text-indigo-600 hover:text-indigo-900">Bewerken</a>
 
-                                    {{-- Delete button — disabled for your own account server-side --}}
-                                    <form action="{{ route('admin.users.destroy', $user) }}"
-                                          method="POST" class="inline"
-                                          onsubmit="return confirm('Account verwijderen?')">
+                                    {{-- Disabled for your own account server-side (see UserController::destroy()) --}}
+                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline">
                                         @csrf
                                         @method('DELETE')
-                                        <button type="submit" class="text-red-600 hover:text-red-900">
+                                        <button type="button"
+                                                @click="deleteForm = $el.closest('form'); deleteModalOpen = true"
+                                                class="text-red-600 hover:text-red-900">
                                             Verwijderen
                                         </button>
                                     </form>
@@ -90,6 +90,8 @@
                     </tbody>
                 </table>
             </div>
+
+            <x-confirm-delete-modal message="Account verwijderen? Dit kan niet ongedaan gemaakt worden." />
 
         </div>
     </div>
