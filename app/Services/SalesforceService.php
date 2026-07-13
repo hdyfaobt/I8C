@@ -134,9 +134,23 @@ class SalesforceService
 
     private function createOpportunity(Order $order, string $accountId): string
     {
-        // Include the order number and customer name in the Opportunity name so it's
-        // recognizable in Salesforce list views, without having to open the record.
-        $opportunityName = "Bestelling #{$order->id} — {$order->customer->name} — {$order->product}";
+        // Include the order number, customer name and first product in the
+        // Opportunity name so it's recognizable in Salesforce list views,
+        // without having to open the record. An order can have several
+        // products now — the rest are listed in the Description instead.
+        $firstProduct = $order->items->first()?->product ?? 'Bestelling';
+        $extraItemsCount = max($order->items->count() - 1, 0);
+        $productLabel = $firstProduct.($extraItemsCount > 0 ? " (+{$extraItemsCount})" : '');
+
+        $opportunityName = "Bestelling #{$order->id} — {$order->customer->name} — {$productLabel}";
+
+        // One line per product, e.g. "3x Widget A — €12.50", so the full
+        // order content is visible in Salesforce without a custom object.
+        $itemLines = $order->items->map(
+            fn ($item) => "{$item->quantity}x {$item->product} — € ".number_format($item->unit_price, 2)
+        )->implode("\n");
+
+        $description = trim($itemLines."\n\n".($order->notes ?? ''));
 
         $response = $this->request('POST', '/services/data/v'.config('salesforce.api_version').'/sobjects/Opportunity', [
             'Name' => $opportunityName,
