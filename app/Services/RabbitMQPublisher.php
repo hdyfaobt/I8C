@@ -20,11 +20,9 @@ class RabbitMQPublisher
     public function publishOrder(Order $order): bool
     {
         try {
-            // Open the connection to RabbitMQ
             $connection = $this->connect();
             $channel = $connection->channel();
 
-            // Declare the queue (creates it if it doesn't exist yet)
             // durable: true = queue survives a RabbitMQ restart
             $channel->queue_declare(
                 queue: config('rabbitmq.queue'),
@@ -34,27 +32,30 @@ class RabbitMQPublisher
                 auto_delete: false
             );
 
-            // Build the message payload as JSON
+            // 'items' carries every product line — the consumer only uses
+            // this payload for logging though; the actual sync re-reads
+            // the order (with its items) fresh from the database, so this
+            // never goes stale between publish and consume.
             $payload = json_encode([
                 'order_id' => $order->id,
                 'customer_id' => $order->customer_id,
                 'customer' => $order->customer->name,
-                'product' => $order->product,
-                'quantity' => $order->quantity,
-                'unit_price' => $order->unit_price,
+                'items' => $order->items->map(fn ($item) => [
+                    'product' => $item->product,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                ])->all(),
                 'total' => $order->totalPrice(),
                 'notes' => $order->notes,
                 'created_at' => $order->created_at->toISOString(),
             ]);
 
-            // Create the AMQP message
             // delivery_mode: 2 = persistent (survives broker restart)
             $message = new AMQPMessage($payload, [
                 'delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT,
                 'content_type' => 'application/json',
             ]);
 
-            // Publish to the default exchange, routed to our queue
             $channel->basic_publish(
                 msg: $message,
                 exchange: '',
@@ -63,7 +64,6 @@ class RabbitMQPublisher
 
             Log::info("[RabbitMQ] Order #{$order->id} published to queue.");
 
-            // Clean up the connection
             $channel->close();
             $connection->close();
 
