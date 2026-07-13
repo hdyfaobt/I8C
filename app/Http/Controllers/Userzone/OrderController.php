@@ -151,7 +151,7 @@ class OrderController extends Controller
             'customer_id' => $validated['customer_id'],
             'created_by' => Auth::id(),
             'notes' => $validated['notes'] ?? null,
-            'status' => 'awaiting_review',
+            'status' => 'pending',
         ]);
 
         foreach ($validated['items'] as $item) {
@@ -165,8 +165,26 @@ class OrderController extends Controller
             ]);
         }
 
-        return redirect()->route('orders.index')
-            ->with('success', 'Bestelling #'.$order->id.' aangemaakt en wacht op validatie door een receptionist.');
+        // A receptionist placing it is the validation — sent straight to
+        // the orderpicker, no separate manual review step.
+        $synced = $this->syncOrderNow($order);
+
+        $message = $synced
+            ? 'Bestelling #'.$order->id.' aangemaakt en verzonden naar de orderpicker.'
+            : 'Bestelling #'.$order->id.' aangemaakt, maar de verzending naar Salesforce is mislukt.';
+
+        return redirect()->route('orders.index')->with('success', $message);
+    }
+
+    // Accept an order right after creation — no manual review step.
+    private function syncOrderNow(Order $order): bool
+    {
+        $order->update(['status' => 'pending', 'accepted_at' => now()]);
+        $order->load(['customer', 'items']);
+
+        app(RabbitMQPublisher::class)->publishOrder($order);
+
+        return app(OrderSyncService::class)->process($order);
     }
 
     // Same visibility rule as index() for orderpickers.
@@ -185,25 +203,20 @@ class OrderController extends Controller
         return view('userzone.orders.show', compact('order', 'canWorkOnPicking'));
     }
 
-    /**
-     * Recreate a previous order for the same customer — same notes and the
-     * exact same product lines. Handy for repeat customers who order the
-     * same things regularly. Just like a brand new order, it starts as
-     * 'awaiting_review' and needs a receptionist to accept it.
-     *
-     * 'created_by' is the person triggering THIS reorder, not whoever
-     * placed the original order being copied — they're the one taking the
-     * order right now.
-     */
+    // 'created_by' is whoever triggers THIS reorder, not the original.
     public function repeat(Order $order)
     {
         $order->load('items');
+
+        if ($order->items->isEmpty()) {
+            return redirect()->back()->with('error', 'Bestelling #'.$order->id.' heeft geen producten, niets om te herhalen.');
+        }
 
         $newOrder = Order::create([
             'customer_id' => $order->customer_id,
             'created_by' => Auth::id(),
             'notes' => $order->notes,
-            'status' => 'awaiting_review',
+            'status' => 'pending',
         ]);
 
         foreach ($order->items as $item) {
@@ -215,8 +228,13 @@ class OrderController extends Controller
             ]);
         }
 
-        return redirect()->back()
-            ->with('success', 'Bestelling #'.$newOrder->id.' aangemaakt (herhaling van #'.$order->id.') en wacht op validatie door een receptionist.');
+        $synced = $this->syncOrderNow($newOrder);
+
+        $message = $synced
+            ? 'Bestelling #'.$newOrder->id.' aangemaakt (herhaling van #'.$order->id.') en verzonden naar de orderpicker.'
+            : 'Bestelling #'.$newOrder->id.' aangemaakt (herhaling van #'.$order->id.'), maar de verzending naar Salesforce is mislukt.';
+
+        return redirect()->back()->with('success', $message);
     }
 
     /**
@@ -236,21 +254,11 @@ class OrderController extends Controller
             return redirect()->back()->with('success', 'Bestelling #'.$order->id.' staat niet meer "wacht op validatie" en kan niet meer geaccepteerd worden.');
         }
 
-        // Can't accept an order with no products at all.
         if ($order->items()->count() === 0) {
             return redirect()->back()->with('error', 'Bestelling #'.$order->id.' heeft geen producten en kan niet geaccepteerd worden. Verwijder ze in plaats daarvan.');
         }
 
-        $order->update(['status' => 'pending', 'accepted_at' => now()]);
-
-        $order->load(['customer', 'items']);
-
-        // Publish to RabbitMQ for the audit trail / architecture, then
-        // process it right away — see OrderSyncService for why this is
-        // safe even if a `rabbitmq:consume` worker also picks it up later.
-        app(RabbitMQPublisher::class)->publishOrder($order);
-
-        $synced = app(OrderSyncService::class)->process($order);
+        $synced = $this->syncOrderNow($order);
 
         $message = $synced
             ? 'Bestelling #'.$order->id.' geaccepteerd en succesvol verzonden naar Salesforce.'
