@@ -30,14 +30,12 @@ class DemoOrdersSeeder extends Seeder
             $customers = $customers->merge(Customer::factory(10 - $customers->count())->create());
         }
 
-        // Weighted mix so the demo shows a healthy, varied pipeline.
+        // No manual review step in this app — orders go straight through,
+        // so the demo mix skips awaiting_review/refused entirely.
         $statusPlan = [
-            'awaiting_review' => 4,
-            'pending' => 2,
-            'sent' => 6,
-            'ready_for_pickup' => 6,
-            'received' => 12,
-            'refused' => 2,
+            'sent' => 8,
+            'ready_for_pickup' => 8,
+            'received' => 16,
             'cancelled' => 2,
             'failed' => 2,
         ];
