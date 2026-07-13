@@ -76,6 +76,37 @@ class SalesforceService
         }
     }
 
+    /**
+     * Sync a customer to Salesforce as an Account, without needing an Order.
+     * This is what lets a manager/admin/receptionist confirm a newly created
+     * customer with a single button, instead of waiting for their first order
+     * to trigger the sync via syncOrder() above. Returns the Salesforce
+     * Account ID on success, null on failure.
+     */
+    public function syncCustomer(Customer $customer): ?string
+    {
+        try {
+            $this->authenticate();
+
+            $accountId = $customer->salesforce_id
+                ?? $this->findAccountByEmail($customer->email)
+                ?? $this->createAccount($customer);
+
+            if ($customer->salesforce_id !== $accountId) {
+                $customer->update(['salesforce_id' => $accountId]);
+            }
+
+            Log::info("[Salesforce] Customer #{$customer->id} synced as Account {$accountId}");
+
+            return $accountId;
+
+        } catch (\Exception $e) {
+            Log::error("[Salesforce] Failed to sync customer #{$customer->id}: ".$e->getMessage());
+
+            return null;
+        }
+    }
+
     private function findAccountByEmail(string $email): ?string
     {
         $response = $this->request('GET', '/services/data/v'.config('salesforce.api_version').'/query', [
