@@ -50,8 +50,9 @@
                         <select name="role"
                                 class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                             @foreach ($roles as $role)
+                                {{-- The submitted value stays lowercase — only the label is capitalized --}}
                                 <option value="{{ $role }}" {{ old('role', $user->roles->first()?->name) === $role ? 'selected' : '' }}>
-                                    {{ $role }}
+                                    {{ ucfirst($role) }}
                                 </option>
                             @endforeach
                         </select>
