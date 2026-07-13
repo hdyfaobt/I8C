@@ -41,11 +41,31 @@ class DebtController extends Controller
                 ];
             })
             ->filter(fn (array $row) => $row['total'] > 0)
-            ->sortByDesc('total')
             ->values();
+
+        $debts = $this->sortDebts($debts);
 
         $grandTotal = $debts->sum('total');
 
         return view('userzone.debts.index', compact('debts', 'grandTotal'));
+    }
+
+    // Default: highest debt first.
+    private function sortDebts(\Illuminate\Support\Collection $debts): \Illuminate\Support\Collection
+    {
+        $sort = request('sort');
+        $direction = request('direction', 'asc');
+
+        $keyBy = match ($sort) {
+            'customer' => fn (array $row) => strtolower($row['customer']->name),
+            'total' => fn (array $row) => $row['total'],
+            default => null,
+        };
+
+        if (! $keyBy) {
+            return $debts->sortByDesc('total')->values();
+        }
+
+        return $direction === 'desc' ? $debts->sortByDesc($keyBy)->values() : $debts->sortBy($keyBy)->values();
     }
 }
