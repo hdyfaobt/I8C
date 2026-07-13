@@ -135,6 +135,7 @@ class OrderController extends Controller
             $product = Product::findOrFail($item['product_id']);
 
             $order->items()->create([
+                'product_id' => $product->id,
                 'product' => $product->name,
                 'quantity' => $item['quantity'],
                 'unit_price' => $item['unit_price'],
@@ -184,6 +185,7 @@ class OrderController extends Controller
 
         foreach ($order->items as $item) {
             $newOrder->items()->create([
+                'product_id' => $item->product_id,
                 'product' => $item->product,
                 'quantity' => $item->quantity,
                 'unit_price' => $item->unit_price,
