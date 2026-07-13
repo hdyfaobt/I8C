@@ -23,31 +23,10 @@ class ProductController extends Controller
         return view('userzone.products.index', compact('products'));
     }
 
-    /**
-     * Statuses that never became a real sale — an order that was refused,
-     * cancelled or never made it to Salesforce didn't actually bring in
-     * any money, so these are left out of the revenue total below (but
-     * still shown in the list itself — it did happen, see the note there).
-     */
+    // Never a real sale, excluded from revenue.
     private const NON_REVENUE_STATUSES = ['cancelled', 'refused', 'failed'];
 
-    /**
-     * Show the order history for a single product: every customer who
-     * ordered it, how many units, when, and how much it has brought in.
-     *
-     * Matched by product_id first — this is what makes the list survive a
-     * product rename (see the add_product_id_to_order_items_table
-     * migration). Older order items created before product_id existed
-     * have none, so they fall back to matching by the product's current
-     * name, same as before. Without this fallback, renaming a product
-     * would make it look like it had only ever been ordered since the
-     * rename, hiding everything ordered under the old name.
-     *
-     * No status filter on the list itself, on purpose: a cancelled or
-     * refused order still shows up (with its status visible) since it did
-     * happen, even if it didn't end up going through — the revenue total
-     * is what excludes those, not the list.
-     */
+    // Product rename fallback, see add_product_id_to_order_items_table.
     public function history(Product $product)
     {
         $items = OrderItem::with(['order.customer'])
@@ -59,6 +38,8 @@ class ProductController extends Controller
             })
             ->whereHas('order')
             ->get()
+            // Out of stock = never actually delivered, so leave it out entirely.
+            ->reject(fn (OrderItem $item) => $item->isOutOfStock())
             ->sortByDesc(fn (OrderItem $item) => $item->order->created_at)
             ->values();
 
