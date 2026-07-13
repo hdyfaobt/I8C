@@ -25,7 +25,7 @@ Route::middleware(['auth', 'role:receptionist|admin|manager'])->group(function (
     Route::get('/customers/search', [CustomerController::class, 'search'])->name('customers.search');
     Route::get('/customers/{customer}/orders', [CustomerController::class, 'orders'])->name('customers.orders');
     Route::post('/customers/{customer}/sync-salesforce', [CustomerController::class, 'syncToSalesforce'])->name('customers.syncSalesforce');
-    Route::resource('customers', CustomerController::class);
+    Route::resource('customers', CustomerController::class)->except(['destroy']);
 
     Route::get('/products/search', [ProductController::class, 'search'])->name('products.search');
     Route::get('/products', [ProductController::class, 'index'])->name('products.index');
@@ -70,9 +70,10 @@ Route::middleware(['auth', 'role:admin|manager'])->group(function () {
     Route::resource('products', ProductController::class)->except(['index', 'show']);
 });
 
-// Permanent order deletion — admin only
+// Permanent deletion — admin only
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::delete('/orders/{order}', [OrderController::class, 'destroy'])->name('orders.destroy');
+    Route::delete('/customers/{customer}', [CustomerController::class, 'destroy'])->name('customers.destroy');
 });
 
 // Admin — user management
