@@ -129,4 +129,20 @@ class CustomerController extends Controller
         return redirect()->route('customers.index')
             ->with('success', 'Klant succesvol verwijderd.');
     }
+
+    /**
+     * Confirm a new customer to Salesforce with a single button — no terminal
+     * needed, same idea as the order sync (ConsumeOrders). Reuses
+     * SalesforceService::syncCustomer(), which creates or links the Account.
+     */
+    public function syncToSalesforce(Customer $customer)
+    {
+        $accountId = app(SalesforceService::class)->syncCustomer($customer);
+
+        if (! $accountId) {
+            return back()->with('error', 'Synchronisatie met Salesforce is mislukt. Probeer het later opnieuw.');
+        }
+
+        return back()->with('success', 'Klant succesvol gesynchroniseerd met Salesforce.');
+    }
 }
