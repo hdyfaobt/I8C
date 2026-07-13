@@ -9,7 +9,20 @@
         {{-- x-data lives here so the payment confirmation alert below can be
              triggered by the "Betalen"/"Betaald" button further down. --}}
         <div class="max-w-2xl mx-auto sm:px-6 lg:px-8"
-             x-data="{ paymentModalOpen: false, paymentForm: null, paymentMode: 'pay' }">
+             x-data="{ paymentModalOpen: false, paymentForm: null, paymentMode: 'pay', deleteModalOpen: false, deleteForm: null }">
+
+            @if (session('success'))
+                <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+                    {{ session('success') }}
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+                    {{ session('error') }}
+                </div>
+            @endif
+
             <div class="bg-white overflow-hidden shadow-sm rounded-lg p-6 space-y-4">
 
                 {{-- Status badge + Betaald badge — two independent facts shown side by side.
@@ -354,6 +367,19 @@
                             <span>🖨</span><span>Print factuur</span>
                         </a>
                     @endhasanyrole
+
+                    {{-- Permanent delete — admin only, for broken/empty orders --}}
+                    @role('admin')
+                        <form action="{{ route('orders.destroy', $order) }}" method="POST">
+                            @csrf
+                            @method('DELETE')
+                            <button type="button"
+                                    @click="deleteForm = $el.closest('form'); deleteModalOpen = true"
+                                    class="px-4 py-2 bg-gray-200 text-red-700 rounded hover:bg-gray-300 transition text-sm">
+                                Verwijderen
+                            </button>
+                        </form>
+                    @endrole
                 </div>
 
                 <hr>
@@ -428,6 +454,8 @@
                     </template>
                 </div>
             </div>
+
+            <x-confirm-delete-modal message="Bestelling #{{ $order->id }} definitief verwijderen? Dit kan niet ongedaan gemaakt worden." />
         </div>
     </div>
 </x-app-layout>
