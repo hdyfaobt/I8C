@@ -31,9 +31,9 @@
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Artikelnummer</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Naam</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prijs</th>
+                            <x-sortable-header column="article_number" label="Artikelnummer" />
+                            <x-sortable-header column="name" label="Naam" />
+                            <x-sortable-header column="price" label="Prijs" />
                             <th class="px-6 py-3"></th>
                         </tr>
                     </thead>
