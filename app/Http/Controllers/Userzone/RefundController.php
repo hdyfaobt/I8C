@@ -28,12 +28,34 @@ class RefundController extends Controller
             ->latest('out_of_stock_at')
             ->get();
 
-        $pending = $items->filter(fn (OrderItem $item) => ! $item->isRefunded())->values();
-        $done = $items->filter(fn (OrderItem $item) => $item->isRefunded())->values();
+        $pending = $this->sortItems($items->filter(fn (OrderItem $item) => ! $item->isRefunded())->values());
+        $done = $this->sortItems($items->filter(fn (OrderItem $item) => $item->isRefunded())->values());
 
         $pendingTotal = $pending->sum(fn (OrderItem $item) => $item->refundAmount());
 
         return view('userzone.refunds.index', compact('pending', 'done', 'pendingTotal'));
+    }
+
+    // Default: most recently out-of-stock first.
+    private function sortItems(\Illuminate\Support\Collection $items): \Illuminate\Support\Collection
+    {
+        $sort = request('sort');
+        $direction = request('direction', 'asc');
+
+        $keyBy = match ($sort) {
+            'customer' => fn (OrderItem $i) => strtolower($i->order->customer->name),
+            'order' => fn (OrderItem $i) => $i->order_id,
+            'product' => fn (OrderItem $i) => strtolower($i->product),
+            'quantity' => fn (OrderItem $i) => $i->quantity,
+            'amount' => fn (OrderItem $i) => $i->refundAmount(),
+            default => null,
+        };
+
+        if (! $keyBy) {
+            return $items;
+        }
+
+        return $direction === 'desc' ? $items->sortByDesc($keyBy)->values() : $items->sortBy($keyBy)->values();
     }
 
     /**
