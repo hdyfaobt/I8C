@@ -6,17 +6,42 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8">
+        {{-- x-data lives here so the payment confirmation alert below can be
+             triggered by the "Betalen"/"Betaald" button further down. --}}
+        <div class="max-w-2xl mx-auto sm:px-6 lg:px-8"
+             x-data="{ paymentModalOpen: false, paymentForm: null, paymentMode: 'pay' }">
             <div class="bg-white overflow-hidden shadow-sm rounded-lg p-6 space-y-4">
 
-                {{-- Status badge --}}
-                <div>
-                    @if ($order->status === 'sent')
-                        <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">✓ Verzonden naar Salesforce</span>
+                {{-- Status badge + Betaald badge — two independent facts shown side by side.
+                     "Betaald" is NOT part of the status lifecycle, see OrderController::togglePaid(). --}}
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($order->status === 'awaiting_review')
+                        <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm">🕓 Wacht op validatie</span>
+                    @elseif ($order->status === 'sent')
+                        <span class="px-3 py-1 bg-orange-100 text-orange-700 rounded-full text-sm">📤 Naar de orderpicker</span>
                     @elseif ($order->status === 'failed')
                         <span class="px-3 py-1 bg-red-100 text-red-700 rounded-full text-sm">✗ Verzending mislukt</span>
+                    @elseif ($order->status === 'refused')
+                        <span class="px-3 py-1 bg-red-200 text-red-800 rounded-full text-sm">⊗ Geweigerd</span>
+                    @elseif ($order->status === 'cancelled')
+                        <span class="px-3 py-1 bg-gray-200 text-gray-700 rounded-full text-sm">⊘ Geannuleerd</span>
+                    @elseif ($order->status === 'ready_for_pickup')
+                        <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">📦 Klaar om op te halen</span>
+                    @elseif ($order->status === 'received')
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm">✓ Ontvangen door klant</span>
                     @else
                         <span class="px-3 py-1 bg-yellow-100 text-yellow-700 rounded-full text-sm">⏳ In afwachting van verwerking</span>
+                    @endif
+
+                    @if ($order->paid)
+                        <span class="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-sm">
+                            ✓ Betaald
+                            @if ($order->payment_method)
+                                ({{ $order->payment_method === 'cash' ? 'Cash' : 'Overschrijving/Bancontact' }})
+                            @endif
+                        </span>
+                    @else
+                        <span class="px-3 py-1 bg-gray-100 text-gray-500 rounded-full text-sm">Niet betaald</span>
                     @endif
                 </div>
 
