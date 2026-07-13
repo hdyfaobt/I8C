@@ -4,32 +4,24 @@ namespace App\Http\Controllers\Userzone;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\Order;
+use App\Services\SalesforceService;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
-    /**
-     * Display the list of all customers.
-     */
     public function index()
     {
-        // Retrieve all customers, newest first
         $customers = Customer::latest()->get();
 
         return view('userzone.customers.index', compact('customers'));
     }
 
-    /**
-     * Show the form to create a new customer.
-     */
     public function create()
     {
         return view('userzone.customers.create');
     }
 
-    /**
-     * Validate and store a new customer in the database.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -111,9 +103,6 @@ class CustomerController extends Controller
             ->with('success', 'Klant succesvol bijgewerkt.');
     }
 
-    /**
-     * Delete a customer from the database.
-     */
     public function destroy(Customer $customer)
     {
         $customer->delete();
