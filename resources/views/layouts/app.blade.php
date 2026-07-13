@@ -24,13 +24,33 @@
             /**
              * @param {object|null} selectedCustomer Pre-selected customer (e.g. after a validation error redisplay).
              * @param {string} searchUrl The "customers.search" route URL.
+             * @param {string} ordersUrlTemplate The "customers.orders" route URL, with the
+             *   customer id replaced by the literal placeholder "__ID__" — see create.blade.php,
+             *   which builds this with route('customers.orders', ['customer' => '__ID__']).
              */
-            Alpine.data('customerSearch', (selectedCustomer = null, searchUrl = '/customers/search') => ({
+            Alpine.data('customerSearch', (selectedCustomer = null, searchUrl = '/customers/search', ordersUrlTemplate = '/customers/__ID__/orders') => ({
                 query: selectedCustomer ? `${selectedCustomer.name} (${selectedCustomer.company ?? selectedCustomer.email})` : '',
                 selectedId: selectedCustomer ? selectedCustomer.id : '',
                 results: [],
                 open: false,
                 loading: false,
+
+                // The selected customer's past orders — replaces the old
+                // per-row "Herbestellen" button on the orders list: reordering
+                // now happens right here, while a receptionist is already
+                // picking the customer for a new order.
+                pastOrders: [],
+                loadingOrders: false,
+
+                // If a customer was already selected when this component
+                // mounted (redisplaying the form after a validation error),
+                // load their past orders immediately too — not just after a
+                // fresh manual selection.
+                init() {
+                    if (this.selectedId) {
+                        this.loadPastOrders(this.selectedId);
+                    }
+                },
 
                 // Called when the input gains focus. If nothing has been searched yet,
                 // load a default list (first 15 customers, alphabetical) so there's
@@ -49,6 +69,7 @@
                 async search() {
                     // Any manual edit of the text invalidates the previous selection.
                     this.selectedId = '';
+                    this.pastOrders = [];
                     this.loading = true;
                     this.open = true;
 
@@ -72,6 +93,24 @@
                     this.query = `${customer.name} (${customer.company ?? customer.email})`;
                     this.results = [];
                     this.open = false;
+                    this.loadPastOrders(customer.id);
+                },
+
+                // Fetch a customer's past orders (see CustomerController::orders()).
+                async loadPastOrders(customerId) {
+                    this.loadingOrders = true;
+                    this.pastOrders = [];
+
+                    try {
+                        const url = ordersUrlTemplate.replace('__ID__', customerId);
+                        const response = await fetch(url, {
+                            headers: { 'Accept': 'application/json' },
+                        });
+
+                        this.pastOrders = await response.json();
+                    } finally {
+                        this.loadingOrders = false;
+                    }
                 },
             }));
         });
