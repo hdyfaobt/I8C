@@ -10,6 +10,7 @@ use App\Models\Product;
 use App\Services\OrderSyncService;
 use App\Services\RabbitMQPublisher;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
@@ -48,10 +49,32 @@ class OrderController extends Controller
 
         $allOrders = $query->get();
 
-        $orders = $allOrders->reject(fn (Order $order) => $order->status === 'cancelled')->values();
-        $cancelledOrders = $allOrders->filter(fn (Order $order) => $order->status === 'cancelled')->values();
+        $orders = $this->sortOrders($allOrders->reject(fn (Order $order) => $order->status === 'cancelled')->values());
+        $cancelledOrders = $this->sortOrders($allOrders->filter(fn (Order $order) => $order->status === 'cancelled')->values());
 
         return view('userzone.orders.index', compact('orders', 'cancelledOrders', 'isPureOrderpicker'));
+    }
+
+    // Column sort for the orders list, 3-state cycle from the header links.
+    private function sortOrders(Collection $orders): Collection
+    {
+        $direction = request('direction', 'asc');
+
+        $keyBy = match (request('sort')) {
+            'id' => fn (Order $o) => $o->id,
+            'customer' => fn (Order $o) => strtolower($o->customer->name),
+            'created_at' => fn (Order $o) => $o->created_at,
+            'status' => fn (Order $o) => $o->status,
+            'total' => fn (Order $o) => $o->totalPrice(),
+            'paid' => fn (Order $o) => $o->paid ? 1 : 0,
+            default => null,
+        };
+
+        if (! $keyBy) {
+            return $orders;
+        }
+
+        return $direction === 'desc' ? $orders->sortByDesc($keyBy)->values() : $orders->sortBy($keyBy)->values();
     }
 
     /**
