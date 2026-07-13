@@ -1,48 +1,50 @@
-<section>
-    <header>
-        <h2 class="text-lg font-medium text-gray-900">
-            {{ __('Update Password') }}
-        </h2>
+<div>
+    <h3 class="text-lg font-medium text-gray-900">Wachtwoord wijzigen</h3>
+    <p class="text-sm text-gray-500 mt-1">Gebruik een lang, willekeurig wachtwoord om je account veilig te houden.</p>
+</div>
 
-        <p class="mt-1 text-sm text-gray-600">
-            {{ __('Ensure your account is using a long, random password to stay secure.') }}
-        </p>
-    </header>
+<form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-4">
+    @csrf
+    @method('put')
 
-    <form method="post" action="{{ route('password.update') }}" class="mt-6 space-y-6">
-        @csrf
-        @method('put')
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Huidig wachtwoord</label>
+        <input type="password" name="current_password"
+               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+               autocomplete="current-password">
+        @error('current_password', 'updatePassword')
+            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+        @enderror
+    </div>
 
-        <div>
-            <x-breeze.input-label for="update_password_current_password" :value="__('Current Password')" />
-            <x-breeze.text-input id="update_password_current_password" name="current_password" type="password" class="mt-1 block w-full" autocomplete="current-password" />
-            <x-breeze.input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
-        </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Nieuw wachtwoord</label>
+        <input type="password" name="password"
+               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+               autocomplete="new-password">
+        @error('password', 'updatePassword')
+            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+        @enderror
+    </div>
 
-        <div>
-            <x-breeze.input-label for="update_password_password" :value="__('New Password')" />
-            <x-breeze.text-input id="update_password_password" name="password" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-breeze.input-error :messages="$errors->updatePassword->get('password')" class="mt-2" />
-        </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Bevestig nieuw wachtwoord</label>
+        <input type="password" name="password_confirmation"
+               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+               autocomplete="new-password">
+        @error('password_confirmation', 'updatePassword')
+            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+        @enderror
+    </div>
 
-        <div>
-            <x-breeze.input-label for="update_password_password_confirmation" :value="__('Confirm Password')" />
-            <x-breeze.text-input id="update_password_password_confirmation" name="password_confirmation" type="password" class="mt-1 block w-full" autocomplete="new-password" />
-            <x-breeze.input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
-        </div>
-
-        <div class="flex items-center gap-4">
-            <x-breeze.primary-button>{{ __('Save') }}</x-breeze.primary-button>
-
-            @if (session('status') === 'password-updated')
-                <p
-                    x-data="{ show: true }"
-                    x-show="show"
-                    x-transition
-                    x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-gray-600"
-                >{{ __('Saved.') }}</p>
-            @endif
-        </div>
-    </form>
-</section>
+    <div class="flex items-center gap-4">
+        <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
+            Opslaan
+        </button>
+        @if (session('status') === 'password-updated')
+            <p x-data="{ show: true }" x-show="show" x-transition
+               x-init="setTimeout(() => show = false, 2000)"
+               class="text-sm text-green-600">Opgeslagen.</p>
+        @endif
+    </div>
+</form>
