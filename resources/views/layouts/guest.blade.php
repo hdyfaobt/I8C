@@ -94,5 +94,24 @@
 
     </div>{{-- end split-screen --}}
 
+    <script>
+        // Global "Bezig..." feedback — same as layouts/app.blade.php, so the
+        // login/wachtwoord-vergeten forms get it too.
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            const button = event.submitter || form.querySelector('button[type="submit"]');
+
+            if (! button || button.disabled) {
+                return;
+            }
+
+            button.disabled = true;
+
+            if (button.children.length === 0) {
+                button.textContent = 'Bezig...';
+            }
+        });
+    </script>
+
 </body>
 </html>
