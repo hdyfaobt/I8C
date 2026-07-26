@@ -9,6 +9,13 @@
     <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
         {{ $order->created_at->format('d/m/Y H:i') }}
     </td>
+    <td class="px-6 py-4 text-sm">
+        @if ($order->paid)
+            <span class="px-2.5 py-1 rounded text-xs font-medium bg-green-100 text-green-700">Betaald</span>
+        @else
+            <span class="px-2.5 py-1 rounded text-xs font-medium bg-gray-100 text-gray-500">Niet betaald</span>
+        @endif
+    </td>
     <td class="px-6 py-4 text-sm text-center">
         <a href="{{ route('orders.show', $order) }}"
            class="px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">
