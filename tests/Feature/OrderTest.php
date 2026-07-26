@@ -4,19 +4,20 @@ use App\Models\Customer;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\RabbitMQPublisher;
+use App\Services\SalesforceService;
 use Database\Seeders\RoleSeeder;
 
-// ---------------------------------------------------------------------------
 // Order repeat — recreate a previous order for the same customer
-// ---------------------------------------------------------------------------
 
 beforeEach(function () {
-    // Avoid real RabbitMQ connections during tests.
+    // No real RabbitMQ/Salesforce calls in tests.
     $this->mock(RabbitMQPublisher::class, function ($mock) {
         $mock->shouldReceive('publishOrder')->andReturn(true);
     });
+    $this->mock(SalesforceService::class, function ($mock) {
+        $mock->shouldReceive('syncOrder')->andReturn('006XX0000000000AAA');
+    });
 
-    // orders.repeat is restricted to receptionist/admin/manager.
     $this->seed(RoleSeeder::class);
 });
 
@@ -50,9 +51,8 @@ test('repeating an order creates a new order with the same details', function ()
     expect($newOrder->items->first()->product)->toBe('Salami XL');
     expect($newOrder->items->first()->quantity)->toBe(5);
     expect((float) $newOrder->items->first()->unit_price)->toBe(12.50);
-    // A repeated order goes through review again, just like a brand new one —
-    // it is not published to RabbitMQ until a receptionist accepts it.
-    expect($newOrder->status)->toBe('awaiting_review');
+    // No manual review step — synced straight through, see OrderController::syncOrderNow().
+    expect($newOrder->status)->toBe('sent');
 });
 
 test('repeating an order requires authentication', function () {
