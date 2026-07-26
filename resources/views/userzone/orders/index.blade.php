@@ -213,17 +213,21 @@
                             </p>
                             <div class="mt-4 flex flex-col gap-2">
                                 <button type="button"
-                                        @click="paymentForm.querySelector('[name=payment_method]').value = 'bank_transfer'; paymentForm.submit(); paymentModalOpen = false"
-                                        class="px-3 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition">
-                                    Overschrijving / Bancontact
+                                        :disabled="paying"
+                                        @click="paying = true; paymentForm.querySelector('[name=payment_method]').value = 'bank_transfer'; paymentForm.requestSubmit()"
+                                        class="px-3 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50">
+                                    <span x-show="!paying">Overschrijving / Bancontact</span>
+                                    <span x-show="paying" x-cloak style="display: none;">Bezig...</span>
                                 </button>
                                 <button type="button"
-                                        @click="paymentForm.querySelector('[name=payment_method]').value = 'cash'; paymentForm.submit(); paymentModalOpen = false"
-                                        class="px-3 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition">
-                                    Cash
+                                        :disabled="paying"
+                                        @click="paying = true; paymentForm.querySelector('[name=payment_method]').value = 'cash'; paymentForm.requestSubmit()"
+                                        class="px-3 py-2 rounded text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition disabled:opacity-50">
+                                    <span x-show="!paying">Cash</span>
+                                    <span x-show="paying" x-cloak style="display: none;">Bezig...</span>
                                 </button>
                             </div>
-                            <div class="mt-3 flex justify-end">
+                            <div class="mt-3 flex justify-end" x-show="!paying">
                                 <button type="button"
                                         @click="paymentModalOpen = false"
                                         class="px-3 py-1.5 rounded text-xs font-medium bg-white text-gray-700 hover:bg-gray-50 transition border border-gray-300">
@@ -241,14 +245,17 @@
                             </p>
                             <div class="mt-4 flex justify-end gap-2">
                                 <button type="button"
+                                        x-show="!paying"
                                         @click="paymentModalOpen = false"
                                         class="px-3 py-1.5 rounded text-xs font-medium bg-white text-gray-700 hover:bg-gray-50 transition border border-gray-300">
                                     Annuleren
                                 </button>
                                 <button type="button"
-                                        @click="paymentForm.submit(); paymentModalOpen = false"
-                                        class="px-3 py-1.5 rounded text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 transition">
-                                    Bevestigen
+                                        :disabled="paying"
+                                        @click="paying = true; paymentForm.requestSubmit()"
+                                        class="px-3 py-1.5 rounded text-xs font-medium text-white bg-orange-600 hover:bg-orange-700 transition disabled:opacity-50">
+                                    <span x-show="!paying">Bevestigen</span>
+                                    <span x-show="paying" x-cloak style="display: none;">Bezig...</span>
                                 </button>
                             </div>
                         </div>
