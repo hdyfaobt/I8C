@@ -3,9 +3,17 @@
 use App\Models\Customer;
 use App\Models\Order;
 use App\Models\User;
+use Database\Seeders\RoleSeeder;
+
+// customers.* is gated to receptionist/admin/manager, see routes/web.php.
+
+beforeEach(function () {
+    $this->seed(RoleSeeder::class);
+});
 
 test('customer show page is displayed with its details', function () {
     $user = User::factory()->create();
+    $user->assignRole('receptionist');
     $customer = Customer::factory()->create();
 
     $response = $this
@@ -19,11 +27,11 @@ test('customer show page is displayed with its details', function () {
 
 test('customer show page lists the customer orders', function () {
     $user = User::factory()->create();
+    $user->assignRole('receptionist');
     $customer = Customer::factory()->create();
-    $order = Order::factory()->create([
-        'customer_id' => $customer->id,
-        'product' => 'Testproduct XYZ',
-    ]);
+    $order = Order::factory()->create(['customer_id' => $customer->id]);
+    $order->items()->delete();
+    $order->items()->create(['product' => 'Testproduct XYZ', 'quantity' => 1, 'unit_price' => 10]);
 
     $response = $this
         ->actingAs($user)
@@ -41,8 +49,19 @@ test('customer show page requires authentication', function () {
     $response->assertRedirect(route('login'));
 });
 
+test('orderpicker cannot view a customer', function () {
+    $user = User::factory()->create();
+    $user->assignRole('orderpicker');
+    $customer = Customer::factory()->create();
+
+    $response = $this->actingAs($user)->get(route('customers.show', $customer));
+
+    $response->assertForbidden();
+});
+
 test('customer search returns matching customers as json', function () {
     $user = User::factory()->create();
+    $user->assignRole('receptionist');
     $match = Customer::factory()->create(['name' => 'Jan Peeters', 'company' => 'Acme BV']);
     Customer::factory()->create(['name' => 'Someone Else', 'company' => 'Other Corp']);
 
@@ -57,6 +76,7 @@ test('customer search returns matching customers as json', function () {
 
 test('customer search matches on company name too', function () {
     $user = User::factory()->create();
+    $user->assignRole('receptionist');
     $match = Customer::factory()->create(['name' => 'Foo Bar', 'company' => 'Acme BV']);
 
     $response = $this
@@ -69,6 +89,7 @@ test('customer search matches on company name too', function () {
 
 test('customer search limits results to 15', function () {
     $user = User::factory()->create();
+    $user->assignRole('receptionist');
     Customer::factory()->count(20)->create(['name' => 'Repeated Name']);
 
     $response = $this
