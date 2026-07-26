@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="px-6 lg:px-8">
 
             {{-- Success message — shared by both views below --}}
             @if (session('success'))
@@ -21,11 +21,29 @@
                 </div>
             @endif
 
+            {{-- Dashboard shortcut filter (?status=..., optionally &mine=1) —
+                 shows only the matching orders and keeps refreshing itself so
+                 an order leaving the filter (e.g. picked up) disappears on
+                 its own, no manual reload needed. --}}
+            @if ($hasActiveFilter)
+                <div class="mb-4 flex items-center justify-between bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-2 text-sm text-indigo-700">
+                    <span>Filter actief — deze lijst ververst zichzelf automatisch.</span>
+                    <a href="{{ route('orders.index') }}" class="font-medium hover:underline">Toon alles</a>
+                </div>
+                <script>
+                    // Full reload, not a partial fetch — simplest way to keep
+                    // this in sync with every other tab/user changing orders.
+                    // Scroll position survives thanks to the layout's restore script.
+                    setTimeout(() => window.location.reload(), 15000);
+                </script>
+            @endif
+
             @if ($isPureOrderpicker)
-                {{-- Orderpicker gets a deliberately stripped-down page: only what
-                     they need (klant, datum, details, overnemen). No status/
-                     totaal/betaling/print — an order only ever shows up here once
-                     it's already accepted, so none of that is their concern. --}}
+                {{-- Orderpicker gets a stripped-down page: klant, datum, betaling,
+                     details, overnemen. No status/totaal/print — an order only
+                     ever shows up here once it's already accepted, so none of
+                     that is their concern. Betaling is shown so they know
+                     whether cash is still due on pickup. --}}
                 <div x-data="{ clientSearch: '' }">
                     <h3 class="text-lg font-medium text-gray-900 mb-6">Overzicht bestellingen</h3>
 
@@ -36,30 +54,29 @@
                                class="w-full max-w-sm rounded border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                     </div>
 
-                    <div class="bg-white shadow-sm rounded-lg overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <x-sortable-header column="id" label="#" />
+                                <x-sortable-header column="customer" label="Klant" />
+                                <x-sortable-header column="created_at" label="Besteldatum" />
+                                <x-sortable-header column="paid" label="Betaling" />
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse ($orders as $order)
+                                @include('userzone.orders._row_orderpicker', ['order' => $order])
+                            @empty
                                 <tr>
-                                    <x-sortable-header column="id" label="#" />
-                                    <x-sortable-header column="customer" label="Klant" />
-                                    <x-sortable-header column="created_at" label="Besteldatum" />
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-400">
+                                        Geen bestellingen gevonden.
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse ($orders as $order)
-                                    @include('userzone.orders._row_orderpicker', ['order' => $order])
-                                @empty
-                                    <tr>
-                                        <td colspan="5" class="px-6 py-8 text-center text-gray-400">
-                                            Geen bestellingen gevonden.
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             @else
 
@@ -67,7 +84,7 @@
                  filter, and the payment confirmation alert can all be shared
                  across every row in both tables below (the main table + the
                  "Geannuleerde bestellingen" table). --}}
-            <div x-data="{ paymentModalOpen: false, paymentForm: null, paymentMode: 'pay', clientSearch: '', paymentFilter: 'all' }">
+            <div x-data="{ paymentModalOpen: false, paymentForm: null, paymentMode: 'pay', paying: false, clientSearch: '', paymentFilter: 'all' }">
 
             {{-- Header row — only receptionist/admin/manager can place new orders --}}
             <div class="flex justify-between items-center mb-6">
@@ -107,35 +124,33 @@
                  onto a second line instead of getting clipped off the right edge.
                  Cancelled orders are deliberately left out of this table — see the
                  separate "Geannuleerde bestellingen" table further down. --}}
-            <div class="bg-white shadow-sm rounded-lg overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <x-sortable-header column="id" label="#" />
+                        <x-sortable-header column="customer" label="Klant" />
+                        <x-sortable-header column="created_at" label="Besteldatum" />
+                        <x-sortable-header column="status" label="Status" />
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
+                        <x-sortable-header column="total" label="Totaal" />
+                        <x-sortable-header column="paid" label="Betaling" />
+                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    @forelse ($orders as $order)
+                        @include('userzone.orders._row', ['order' => $order])
+                    @empty
                         <tr>
-                            <x-sortable-header column="id" label="#" />
-                            <x-sortable-header column="customer" label="Klant" />
-                            <x-sortable-header column="created_at" label="Besteldatum" />
-                            <x-sortable-header column="status" label="Status" />
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
-                            <x-sortable-header column="total" label="Totaal" />
-                            <x-sortable-header column="paid" label="Betaling" />
-                            <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
-                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
+                            <td colspan="10" class="px-6 py-8 text-center text-gray-400">
+                                Geen bestellingen gevonden.
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse ($orders as $order)
-                            @include('userzone.orders._row', ['order' => $order])
-                        @empty
-                            <tr>
-                                <td colspan="10" class="px-6 py-8 text-center text-gray-400">
-                                    Geen bestellingen gevonden.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                    @endforelse
+                </tbody>
+            </table>
 
             {{-- Geannuleerde bestellingen — a cancelled order drops out of the main
                  table above but isn't hidden entirely: it lands here, still visible
@@ -149,29 +164,27 @@
                     <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-3">
                         Geannuleerde bestellingen
                     </h3>
-                    <div class="bg-white shadow-sm rounded-lg overflow-x-auto opacity-90">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <x-sortable-header column="id" label="#" />
-                                    <x-sortable-header column="customer" label="Klant" />
-                                    <x-sortable-header column="created_at" label="Besteldatum" />
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
-                                    <x-sortable-header column="total" label="Totaal" />
-                                    <x-sortable-header column="paid" label="Betaling" />
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @foreach ($cancelledOrders as $order)
-                                    @include('userzone.orders._row', ['order' => $order])
-                                @endforeach
-                            </tbody>
-                        </table>
-                    </div>
+                    <table class="min-w-full divide-y divide-gray-200 opacity-90">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <x-sortable-header column="id" label="#" />
+                                <x-sortable-header column="customer" label="Klant" />
+                                <x-sortable-header column="created_at" label="Besteldatum" />
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
+                                <x-sortable-header column="total" label="Totaal" />
+                                <x-sortable-header column="paid" label="Betaling" />
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach ($cancelledOrders as $order)
+                                @include('userzone.orders._row', ['order' => $order])
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
             @endif
 
