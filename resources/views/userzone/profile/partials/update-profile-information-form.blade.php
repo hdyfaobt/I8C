@@ -3,10 +3,6 @@
     <p class="text-sm text-gray-500 mt-1">Werk je naam en e-mailadres bij.</p>
 </div>
 
-<form id="send-verification" method="post" action="{{ route('verification.send') }}">
-    @csrf
-</form>
-
 <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-4">
     @csrf
     @method('patch')
@@ -29,22 +25,6 @@
         @error('email')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
         @enderror
-
-        @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-            <div class="mt-2">
-                <p class="text-sm text-gray-600">
-                    Je e-mailadres is niet geverifieerd.
-                    <button form="send-verification" class="underline text-indigo-600 hover:text-indigo-900">
-                        Verificatiemail opnieuw versturen.
-                    </button>
-                </p>
-                @if (session('status') === 'verification-link-sent')
-                    <p class="mt-1 text-sm font-medium text-green-600">
-                        Een nieuwe verificatielink is verstuurd naar je e-mailadres.
-                    </p>
-                @endif
-            </div>
-        @endif
     </div>
 
     <div class="flex items-center gap-4">
