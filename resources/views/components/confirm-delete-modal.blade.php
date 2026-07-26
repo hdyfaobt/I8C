@@ -5,7 +5,7 @@
     popup for a generic "are you sure you want to delete this?" action.
 
     Expects an ancestor element with Alpine state:
-        x-data="{ deleteModalOpen: false, deleteForm: null }"
+        x-data="{ deleteModalOpen: false, deleteForm: null, deleting: false }"
     Each delete button should trigger it like this, instead of the old
     onsubmit="return confirm(...)":
         <button type="button"
@@ -26,14 +26,17 @@
         </p>
         <div class="mt-4 flex justify-end gap-2">
             <button type="button"
+                    x-show="!deleting"
                     @click="deleteModalOpen = false"
                     class="px-3 py-1.5 rounded text-xs font-medium bg-white text-gray-700 hover:bg-gray-50 transition border border-gray-300">
                 Annuleren
             </button>
             <button type="button"
-                    @click="deleteForm.submit(); deleteModalOpen = false"
-                    class="px-3 py-1.5 rounded text-xs font-medium text-white bg-red-600 hover:bg-red-700 transition">
-                Verwijderen
+                    :disabled="deleting"
+                    @click="deleting = true; deleteForm.requestSubmit()"
+                    class="px-3 py-1.5 rounded text-xs font-medium text-white bg-red-600 hover:bg-red-700 transition disabled:opacity-50">
+                <span x-show="!deleting">Verwijderen</span>
+                <span x-show="deleting" x-cloak style="display: none;">Bezig...</span>
             </button>
         </div>
     </div>
