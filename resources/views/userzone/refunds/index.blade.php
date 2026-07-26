@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="px-6 lg:px-8">
 
             @if (session('success'))
                 <div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
@@ -23,10 +23,8 @@
             </div>
 
             {{-- Pending refunds — items reported out of stock, not yet paid back --}}
-            <div class="bg-white shadow-sm rounded-lg overflow-x-auto mb-10">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="text-lg font-medium text-gray-900">Openstaande terugbetalingen</h3>
-                </div>
+            <div class="mb-10">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Openstaande terugbetalingen</h3>
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
@@ -98,11 +96,113 @@
                 </table>
             </div>
 
-            {{-- Already refunded — kept for reference/audit, not just deleted --}}
-            <div class="bg-white shadow-sm rounded-lg overflow-x-auto">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="text-lg font-medium text-gray-900">Al terugbetaald</h3>
+            {{-- Whole orders — refused/failed after being paid, full amount owed back --}}
+            <div class="mb-10">
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Geweigerde / mislukte bestellingen (volledig betaald)</h3>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klant</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bestelling</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bedrag</th>
+                            <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        @forelse ($pendingOrders as $order)
+                            <tr>
+                                <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                                    {{ $order->customer->name }}
+                                    @if ($order->customer->company)
+                                        <span class="text-gray-400">({{ $order->customer->company }})</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-sm">
+                                    <a href="{{ route('orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-800">
+                                        #{{ $order->id }}
+                                    </a>
+                                </td>
+                                <td class="px-6 py-4 text-sm">
+                                    <span class="px-2.5 py-1 rounded text-xs font-medium bg-red-100 text-red-700">
+                                        {{ $order->status === 'refused' ? 'Geweigerd' : 'Mislukt' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 text-sm font-medium text-orange-700">
+                                    € {{ number_format($order->totalPrice(), 2, ',', '.') }}
+                                </td>
+                                <td class="px-6 py-4 text-sm text-right">
+                                    <form action="{{ route('refunds.markOrderRefunded', $order) }}" method="POST" class="inline">
+                                        @csrf
+                                        <button type="submit"
+                                                class="px-3 py-1.5 rounded text-xs font-medium bg-orange-100 text-orange-700 hover:bg-orange-200 transition">
+                                            Terugbetaald
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="5" class="px-6 py-8 text-center text-gray-400">
+                                    Geen openstaande terugbetalingen voor bestellingen.
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            @if ($doneOrders->isNotEmpty())
+                <div class="mb-10">
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">Terugbetaalde bestellingen</h3>
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Klant</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bestelling</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bedrag</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Terugbetaald op</th>
+                                @hasanyrole('admin|manager')
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                @endhasanyrole
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach ($doneOrders as $order)
+                                <tr>
+                                    <td class="px-6 py-4 text-sm font-medium text-gray-900">{{ $order->customer->name }}</td>
+                                    <td class="px-6 py-4 text-sm">
+                                        <a href="{{ route('orders.show', $order) }}" class="text-indigo-600 hover:text-indigo-800">
+                                            #{{ $order->id }}
+                                        </a>
+                                    </td>
+                                    <td class="px-6 py-4 text-sm font-medium text-green-700">
+                                        € {{ number_format($order->totalPrice(), 2, ',', '.') }}
+                                    </td>
+                                    <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+                                        {{ $order->refunded_at->format('d/m/Y') }}
+                                    </td>
+                                    @hasanyrole('admin|manager')
+                                        <td class="px-6 py-4 text-sm text-right">
+                                            <form action="{{ route('refunds.markOrderRefunded', $order) }}" method="POST" class="inline">
+                                                @csrf
+                                                <button type="submit"
+                                                        class="px-3 py-1.5 rounded text-xs font-medium bg-gray-100 text-gray-600 hover:bg-gray-200 transition">
+                                                    Herstel
+                                                </button>
+                                            </form>
+                                        </td>
+                                    @endhasanyrole
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
+            @endif
+
+            {{-- Already refunded — kept for reference/audit, not just deleted --}}
+            <div>
+                <h3 class="text-lg font-medium text-gray-900 mb-3">Al terugbetaald</h3>
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
