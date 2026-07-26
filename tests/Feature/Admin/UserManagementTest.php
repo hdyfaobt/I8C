@@ -4,9 +4,8 @@ use App\Models\User;
 use Database\Seeders\RoleSeeder;
 use Spatie\Permission\Models\Role;
 
-// ---------------------------------------------------------------------------
-// Admin account management — only "admin" role can create/edit/delete accounts
-// ---------------------------------------------------------------------------
+// Admin account management — admin has full access; manager can view/edit
+// but not create or delete accounts.
 
 beforeEach(function () {
     $this->seed(RoleSeeder::class);
@@ -108,4 +107,63 @@ test('admin can delete another account', function () {
 
     $response->assertRedirect(route('admin.users.index'));
     expect(User::find($target->id))->toBeNull();
+});
+
+// Manager — view/edit only, no create or delete
+
+test('manager can view the accounts list', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('manager');
+
+    $response = $this->actingAs($manager)->get(route('admin.users.index'));
+
+    $response->assertOk();
+});
+
+test('manager can edit an existing account', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('manager');
+
+    $target = User::factory()->create();
+    $target->assignRole('receptionist');
+
+    $response = $this->actingAs($manager)->put(route('admin.users.update', $target), [
+        'name' => $target->name,
+        'email' => $target->email,
+        'role' => 'orderpicker',
+    ]);
+
+    $response->assertRedirect(route('admin.users.index'));
+    expect($target->fresh()->hasRole('orderpicker'))->toBeTrue();
+});
+
+test('manager cannot create a new account', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('manager');
+
+    $response = $this->actingAs($manager)->get(route('admin.users.create'));
+
+    $response->assertForbidden();
+
+    $response = $this->actingAs($manager)->post(route('admin.users.store'), [
+        'name' => 'Iemand',
+        'email' => 'iemand@i8c.be',
+        'password' => 'password123',
+        'role' => 'receptionist',
+    ]);
+
+    $response->assertForbidden();
+});
+
+test('manager cannot delete an account', function () {
+    $manager = User::factory()->create();
+    $manager->assignRole('manager');
+
+    $target = User::factory()->create();
+    $target->assignRole('receptionist');
+
+    $response = $this->actingAs($manager)->delete(route('admin.users.destroy', $target));
+
+    $response->assertForbidden();
+    expect(User::find($target->id))->not->toBeNull();
 });
