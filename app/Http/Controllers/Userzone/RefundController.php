@@ -3,24 +3,18 @@
 namespace App\Http\Controllers\Userzone;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Models\OrderItem;
 
 /**
- * Refund requests — every order item marked "out of stock" (see
- * OrderController::markItemOutOfStock()) means the customer paid for
- * something they never got, so it needs to be refunded. This controller
- * gives receptionist/manager/admin a single place to see who's owed money,
- * for which order, and how much — instead of having to dig through every
- * order's picking comment to find out (see routes/web.php for the
- * receptionist|admin|manager restriction).
+ * Refund requests — either a single item marked "out of stock" (see
+ * OrderController::markItemOutOfStock()), or a whole order that got
+ * refused/failed after already being paid (see Order::refundEligible()).
+ * Both mean the customer paid for something they never got.
  */
 class RefundController extends Controller
 {
-    /**
-     * List every out-of-stock item, split into what's still owed
-     * ("pending") and what's already been paid back ("done"). Pending
-     * items are shown first/prominently since they're the open task.
-     */
+    // Item refunds (out-of-stock) and order refunds (refused/failed), split pending/done.
     public function index()
     {
         $items = OrderItem::whereNotNull('out_of_stock_at')
@@ -28,12 +22,42 @@ class RefundController extends Controller
             ->latest('out_of_stock_at')
             ->get();
 
+        $orders = Order::where('paid', true)
+            ->whereIn('status', ['refused', 'failed'])
+            ->with('customer')
+            ->latest('id')
+            ->get();
+
         $pending = $this->sortItems($items->filter(fn (OrderItem $item) => ! $item->isRefunded())->values());
         $done = $this->sortItems($items->filter(fn (OrderItem $item) => $item->isRefunded())->values());
 
-        $pendingTotal = $pending->sum(fn (OrderItem $item) => $item->refundAmount());
+        $pendingOrders = $this->sortOrders($orders->filter(fn (Order $order) => ! $order->isRefunded())->values());
+        $doneOrders = $this->sortOrders($orders->filter(fn (Order $order) => $order->isRefunded())->values());
 
-        return view('userzone.refunds.index', compact('pending', 'done', 'pendingTotal'));
+        $pendingTotal = $pending->sum(fn (OrderItem $item) => $item->refundAmount())
+            + $pendingOrders->sum(fn (Order $order) => $order->totalPrice());
+
+        return view('userzone.refunds.index', compact('pending', 'done', 'pendingOrders', 'doneOrders', 'pendingTotal'));
+    }
+
+    // Newest refused/failed first, unless a column sort was requested.
+    private function sortOrders(\Illuminate\Support\Collection $orders): \Illuminate\Support\Collection
+    {
+        $sort = request('orderSort');
+        $direction = request('orderDirection', 'asc');
+
+        $keyBy = match ($sort) {
+            'customer' => fn (Order $o) => strtolower($o->customer->name),
+            'order' => fn (Order $o) => $o->id,
+            'amount' => fn (Order $o) => $o->totalPrice(),
+            default => null,
+        };
+
+        if (! $keyBy) {
+            return $orders;
+        }
+
+        return $direction === 'desc' ? $orders->sortByDesc($keyBy)->values() : $orders->sortBy($keyBy)->values();
     }
 
     // Default: most recently out-of-stock first.
@@ -82,6 +106,20 @@ class RefundController extends Controller
             // Order was never paid — nothing was actually refunded, just acknowledged.
             $message = "'{$item->product}' (bestelling #{$item->order_id}) gemarkeerd als verwerkt — bestelling was niet betaald, dus geen terugbetaling nodig.";
         }
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    // Same toggle, but for a whole refused/failed paid order.
+    public function markOrderRefunded(Order $order)
+    {
+        $order->update([
+            'refunded_at' => $order->isRefunded() ? null : now(),
+        ]);
+
+        $message = $order->isRefunded()
+            ? "Terugbetaling voor bestelling #{$order->id} genoteerd."
+            : "Terugbetaling voor bestelling #{$order->id} teruggezet naar openstaand.";
 
         return redirect()->back()->with('success', $message);
     }
