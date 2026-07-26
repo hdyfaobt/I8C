@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="px-6 lg:px-8" x-data="{ deleteModalOpen: false, deleteForm: null }">
+        <div class="px-6 lg:px-8" x-data="{ deleteModalOpen: false, deleteForm: null, deleting: false }">
 
             {{-- Success message --}}
             @if (session('success'))
