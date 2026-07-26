@@ -146,7 +146,7 @@
                     @if ($order->notes)
                     <div class="col-span-2">
                         <p class="text-gray-500">Opmerkingen</p>
-                        <p>{{ $order->notes }}</p>
+                        <p class="mt-1 p-2 bg-amber-50 border border-amber-200 rounded text-sm font-medium text-gray-800">{{ $order->notes }}</p>
                     </div>
                     @endif
                 </div>
@@ -170,7 +170,8 @@
                         </thead>
                         <tbody class="divide-y divide-gray-100">
                             @foreach ($order->items as $item)
-                                <tr>
+                                {{-- Out of stock — struck through, it's not actually being delivered --}}
+                                <tr class="{{ $item->isOutOfStock() ? 'line-through text-gray-400' : '' }}">
                                     <td class="py-2">{{ $item->product }}</td>
                                     <td class="py-2">{{ $item->quantity }}</td>
                                     <td class="py-2">€ {{ number_format($item->unit_price, 2, ',', '.') }}</td>
@@ -227,11 +228,11 @@
                                 </button>
                             </form>
                         @elseif ($order->picking_comment)
-                            <p class="text-sm">{{ $order->picking_comment }}</p>
+                            <p class="p-2 bg-amber-50 border border-amber-200 rounded text-sm font-medium text-gray-800">{{ $order->picking_comment }}</p>
                         @endif
                     @else
                         @if ($order->picking_comment)
-                            <p class="text-sm">{{ $order->picking_comment }}</p>
+                            <p class="p-2 bg-amber-50 border border-amber-200 rounded text-sm font-medium text-gray-800">{{ $order->picking_comment }}</p>
                         @else
                             <p class="text-sm text-gray-400">—</p>
                         @endif
