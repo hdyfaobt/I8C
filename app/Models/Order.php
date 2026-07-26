@@ -29,6 +29,7 @@ class Order extends Model
         'cancelled_at',
         'accepted_at',
         'refused_at',
+        'refunded_at',
         'picking_comment',
         'ready_at',
         'prepared_by',
@@ -49,6 +50,7 @@ class Order extends Model
         'cancelled_at' => 'datetime',
         'accepted_at' => 'datetime',
         'refused_at' => 'datetime',
+        'refunded_at' => 'datetime',
         'ready_at' => 'datetime',
         'received_at' => 'datetime',
     ];
@@ -115,6 +117,17 @@ class Order extends Model
         $outOfStockTotal = $this->items->sum(fn (OrderItem $item) => $item->isOutOfStock() ? $item->lineTotal() : 0);
 
         return $this->totalPrice() - $outOfStockTotal;
+    }
+
+    // Paid but never delivered — refused or failed, needs money back.
+    public function refundEligible(): bool
+    {
+        return $this->paid && in_array($this->status, ['refused', 'failed'], true);
+    }
+
+    public function isRefunded(): bool
+    {
+        return $this->refunded_at !== null;
     }
 
     /**
