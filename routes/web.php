@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Userzone\CustomerController;
 use App\Http\Controllers\Userzone\DebtController;
 use App\Http\Controllers\Userzone\OrderController;
@@ -12,6 +13,9 @@ use Illuminate\Support\Facades\Route;
 
 // Home
 Route::get('/', fn () => Auth::check() ? redirect()->route('orders.index') : redirect()->route('login'));
+
+// Dashboard — navbar link, every role, not the home page
+Route::middleware('auth')->get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
 // Profile
 Route::middleware('auth')->group(function () {
@@ -41,6 +45,7 @@ Route::middleware(['auth', 'role:receptionist|admin|manager'])->group(function (
 
     Route::get('/refunds', [RefundController::class, 'index'])->name('refunds.index');
     Route::post('/refunds/{item}/mark', [RefundController::class, 'markRefunded'])->name('refunds.markRefunded');
+    Route::post('/refunds/orders/{order}/mark', [RefundController::class, 'markOrderRefunded'])->name('refunds.markOrderRefunded');
 
     Route::get('/debts', [DebtController::class, 'index'])->name('debts.index');
 });
@@ -77,11 +82,23 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 // Admin — user management
+// Viewing + editing is also open to manager; creating/deleting stays admin-only.
+Route::middleware(['auth', 'role:admin|manager'])
+    ->prefix('admin')
+    ->name('admin.')
+    ->group(function () {
+        Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
+        Route::put('users/{user}', [AdminUserController::class, 'update'])->name('users.update');
+    });
+
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::resource('users', AdminUserController::class)->except(['show']);
+        Route::get('users/create', [AdminUserController::class, 'create'])->name('users.create');
+        Route::post('users', [AdminUserController::class, 'store'])->name('users.store');
+        Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     });
 
 require __DIR__.'/auth.php';
