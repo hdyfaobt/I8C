@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="px-6 lg:px-8">
 
             {{-- Summary — total still owed to us, across every customer --}}
             <div class="mb-6 p-4 rounded-lg border {{ $debts->isEmpty() ? 'bg-gray-50 border-gray-200' : 'bg-red-50 border-red-200' }}">
@@ -16,14 +16,13 @@
                 </p>
             </div>
 
-            <div class="bg-white shadow-sm rounded-lg overflow-x-auto">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="text-lg font-medium text-gray-900">Per klant</h3>
-                    <p class="text-sm text-gray-400">
-                        Onbetaalde bestellingen — producten die niet meer op voorraad waren, tellen hier niet mee (zie Terugbetalingen).
-                    </p>
-                </div>
-                <table class="min-w-full divide-y divide-gray-200">
+            <div class="mb-3">
+                <h3 class="text-lg font-medium text-gray-900">Per klant</h3>
+                <p class="text-sm text-gray-400">
+                    Onbetaalde bestellingen — producten die niet meer op voorraad waren, tellen hier niet mee (zie Terugbetalingen).
+                </p>
+            </div>
+            <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <x-sortable-header column="customer" label="Klant" />
@@ -64,7 +63,6 @@
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
         </div>
     </div>
