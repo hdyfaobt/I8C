@@ -41,18 +41,33 @@ class OrderController extends Controller
     {
         $isPureOrderpicker = $this->isPureOrderpicker();
 
-        $query = Order::with(['customer', 'items'])->latest();
+        // Sorted by id, not created_at — the id is a reliable, always-increasing
+        // order number, while created_at can be backdated (e.g. demo/seeded
+        // data), which would otherwise show orders in a mismatched sequence.
+        $query = Order::with(['customer', 'items'])->latest('id');
 
         if ($isPureOrderpicker) {
             $query->whereIn('status', self::ORDERPICKER_VISIBLE_STATUSES);
         }
+
+        // Dashboard shortcut filter — e.g. ?status=sent or ?status=sent&mine=1
+        // for "In behandeling door mij". Narrows the list only, never widens
+        // it past what the role above is already allowed to see.
+        $statusFilter = array_filter(explode(',', (string) request('status', '')));
+        if ($statusFilter !== []) {
+            $query->whereIn('status', $statusFilter);
+        }
+        if (request()->boolean('mine')) {
+            $query->where('prepared_by', Auth::id());
+        }
+        $hasActiveFilter = $statusFilter !== [] || request()->boolean('mine');
 
         $allOrders = $query->get();
 
         $orders = $this->sortOrders($allOrders->reject(fn (Order $order) => $order->status === 'cancelled')->values());
         $cancelledOrders = $this->sortOrders($allOrders->filter(fn (Order $order) => $order->status === 'cancelled')->values());
 
-        return view('userzone.orders.index', compact('orders', 'cancelledOrders', 'isPureOrderpicker'));
+        return view('userzone.orders.index', compact('orders', 'cancelledOrders', 'isPureOrderpicker', 'hasActiveFilter'));
     }
 
     // Column sort for the orders list, 3-state cycle from the header links.
