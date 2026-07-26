@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8" x-data="{ deleteModalOpen: false, deleteForm: null }">
+        <div class="px-6 lg:px-8" x-data="{ deleteModalOpen: false, deleteForm: null }">
 
             {{-- Success message --}}
             @if (session('success'))
@@ -22,18 +22,19 @@
                 </div>
             @endif
 
-            {{-- Header row: title + add button --}}
+            {{-- Header row: title + add button — creating stays admin-only --}}
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-medium text-gray-900">Overzicht accounts</h3>
-                <a href="{{ route('admin.users.create') }}"
-                   class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
-                    + Account toevoegen
-                </a>
+                @role('admin')
+                    <a href="{{ route('admin.users.create') }}"
+                       class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
+                        + Account toevoegen
+                    </a>
+                @endrole
             </div>
 
             {{-- Users table --}}
-            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
-                <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <x-sortable-header column="name" label="Naam" />
@@ -68,16 +69,18 @@
                                     <a href="{{ route('admin.users.edit', $user) }}"
                                        class="text-indigo-600 hover:text-indigo-900">Bewerken</a>
 
-                                    {{-- Disabled for your own account server-side (see UserController::destroy()) --}}
-                                    <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="button"
-                                                @click="deleteForm = $el.closest('form'); deleteModalOpen = true"
-                                                class="text-red-600 hover:text-red-900">
-                                            Verwijderen
-                                        </button>
-                                    </form>
+                                    {{-- Deleting stays admin-only, disabled for your own account server-side too (see UserController::destroy()) --}}
+                                    @role('admin')
+                                        <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button"
+                                                    @click="deleteForm = $el.closest('form'); deleteModalOpen = true"
+                                                    class="text-red-600 hover:text-red-900">
+                                                Verwijderen
+                                            </button>
+                                        </form>
+                                    @endrole
                                 </td>
                             </tr>
                         @empty
@@ -89,7 +92,6 @@
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
             <x-confirm-delete-modal message="Account verwijderen? Dit kan niet ongedaan gemaakt worden." />
 
