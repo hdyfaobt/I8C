@@ -52,6 +52,12 @@
 
                 {{-- Desktop nav links --}}
                 <div class="hidden sm:flex space-x-1">
+                    <a href="{{ route('orders.index') }}"
+                       class="px-4 py-2 rounded-lg text-sm font-medium transition
+                              {{ request()->routeIs('orders.*') ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/10' }}"
+                       style="{{ request()->routeIs('orders.*') ? 'background-color: '.$accentColor.';' : '' }}">
+                        Bestellingen
+                    </a>
                     {{-- Customer management is a receptionist/admin/manager job — orderpicker doesn't get this link --}}
                     @hasanyrole('receptionist|admin|manager')
                         <a href="{{ route('customers.index') }}"
@@ -61,12 +67,6 @@
                             Klanten
                         </a>
                     @endhasanyrole
-                    <a href="{{ route('orders.index') }}"
-                       class="px-4 py-2 rounded-lg text-sm font-medium transition
-                              {{ request()->routeIs('orders.*') ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/10' }}"
-                       style="{{ request()->routeIs('orders.*') ? 'background-color: '.$accentColor.';' : '' }}">
-                        Bestellingen
-                    </a>
                     {{-- Product catalog — same visibility as customers: receptionist/admin/manager --}}
                     @hasanyrole('receptionist|admin|manager')
                         <a href="{{ route('products.index') }}"
@@ -105,15 +105,22 @@
                             @endif
                         </a>
                     @endhasanyrole
-                    {{-- Only visible to admins — account management --}}
-                    @role('admin')
+                    {{-- Viewing/editing is also open to manager — creating/deleting stays admin-only --}}
+                    @hasanyrole('admin|manager')
                         <a href="{{ route('admin.users.index') }}"
                            class="px-4 py-2 rounded-lg text-sm font-medium transition
                                   {{ request()->routeIs('admin.users.*') ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/10' }}"
                            style="{{ request()->routeIs('admin.users.*') ? 'background-color: '.$accentColor.';' : '' }}">
                             Gebruikers
                         </a>
-                    @endrole
+                    @endhasanyrole
+                    {{-- Dashboard — last, it's a summary/shortcut, not a primary work tab --}}
+                    <a href="{{ route('dashboard') }}"
+                       class="px-4 py-2 rounded-lg text-sm font-medium transition
+                              {{ request()->routeIs('dashboard') ? 'text-white' : 'text-gray-400 hover:text-white hover:bg-white/10' }}"
+                       style="{{ request()->routeIs('dashboard') ? 'background-color: '.$accentColor.';' : '' }}">
+                        Dashboard
+                    </a>
                 </div>
             </div>
 
@@ -171,16 +178,16 @@
 
     {{-- Mobile menu --}}
     <div :class="{'block': open, 'hidden': !open}" class="hidden sm:hidden px-4 pb-4 space-y-1">
+        <a href="{{ route('orders.index') }}"
+           class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">
+            Bestellingen
+        </a>
         @hasanyrole('receptionist|admin|manager')
             <a href="{{ route('customers.index') }}"
                class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">
                 Klanten
             </a>
         @endhasanyrole
-        <a href="{{ route('orders.index') }}"
-           class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">
-            Bestellingen
-        </a>
         @hasanyrole('receptionist|admin|manager')
             <a href="{{ route('products.index') }}"
                class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">
@@ -209,13 +216,17 @@
                 @endif
             </a>
         @endhasanyrole
-        {{-- Only visible to admins — account management --}}
-        @role('admin')
+        {{-- Viewing/editing is also open to manager — creating/deleting stays admin-only --}}
+        @hasanyrole('admin|manager')
             <a href="{{ route('admin.users.index') }}"
                class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">
                 Gebruikers
             </a>
-        @endrole
+        @endhasanyrole
+        <a href="{{ route('dashboard') }}"
+           class="block px-4 py-2 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/10">
+            Dashboard
+        </a>
         <hr class="border-white/10 my-2">
         <a href="{{ route('profile.edit') }}"
            class="block px-4 py-2 rounded-lg text-sm text-gray-300 hover:text-white hover:bg-white/10">
