@@ -145,6 +145,27 @@
     </main>
 
     <script>
+        // Global "Bezig..." feedback — disables the submit button on every
+        // form so it can't be double-clicked, and swaps its label unless it
+        // already manages its own loading state (e.g. an Alpine spinner
+        // with x-show, like the "Accepteren"/"Weigeren" buttons).
+        document.addEventListener('submit', (event) => {
+            const form = event.target;
+            const button = event.submitter || form.querySelector('button[type="submit"]');
+
+            if (! button || button.disabled) {
+                return;
+            }
+
+            button.disabled = true;
+
+            if (button.children.length === 0) {
+                button.textContent = 'Bezig...';
+            }
+        });
+    </script>
+
+    <script>
         // Keep scroll position across page reloads.
         (function () {
             const key = 'scrollY:' + window.location.pathname;
