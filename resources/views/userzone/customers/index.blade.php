@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+        <div class="px-6 lg:px-8">
 
             {{-- Success message --}}
             @if (session('success'))
@@ -32,8 +32,7 @@
             </div>
 
             {{-- Customers table --}}
-            <div class="bg-white overflow-hidden shadow-sm rounded-lg">
-                <table class="min-w-full divide-y divide-gray-200">
+            <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <x-sortable-header column="id" label="Klantnummer" />
@@ -102,7 +101,6 @@
                         @endforelse
                     </tbody>
                 </table>
-            </div>
 
         </div>
     </div>
