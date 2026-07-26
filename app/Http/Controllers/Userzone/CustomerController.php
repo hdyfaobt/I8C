@@ -99,6 +99,16 @@ class CustomerController extends Controller
                 'created_at' => $order->created_at->format('d/m/Y'),
                 'items_summary' => $order->items->pluck('product')->join(', '),
                 'total' => number_format($order->totalPrice(), 2, ',', '.'),
+                // Structured lines — lets the "create order" form prefill its own
+                // product rows (see create.blade.php) instead of placing the
+                // order straight away, unlike the one-click "Herbestellen" button
+                // elsewhere (see OrderController::repeat()).
+                'items' => $order->items->map(fn ($item) => [
+                    'product_id' => $item->product_id,
+                    'product' => $item->product,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                ]),
             ]);
 
         return response()->json($orders);
