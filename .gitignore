@@ -35,3 +35,6 @@ auth.json
 *.crt
 salesforce-cert.crt
 salesforce-key.pem
+
+# Graphify generated knowledge graph
+/graphify-out/
