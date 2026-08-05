@@ -6,15 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\OrderItem;
 
-/**
- * Refund requests — either a single item marked "out of stock" (see
- * OrderController::markItemOutOfStock()), or a whole order that got
- * refused/failed after already being paid (see Order::refundEligible()).
- * Both mean the customer paid for something they never got.
- */
+// Refund requests overview
 class RefundController extends Controller
 {
-    // Item refunds (out-of-stock) and order refunds (refused/failed), split pending/done.
+    // List pending and done refunds
     public function index()
     {
         $items = OrderItem::whereNotNull('out_of_stock_at')
@@ -40,7 +35,7 @@ class RefundController extends Controller
         return view('userzone.refunds.index', compact('pending', 'done', 'pendingOrders', 'doneOrders', 'pendingTotal'));
     }
 
-    // Newest refused/failed first, unless a column sort was requested.
+    // Sort refunded orders
     private function sortOrders(\Illuminate\Support\Collection $orders): \Illuminate\Support\Collection
     {
         $sort = request('orderSort');
@@ -60,7 +55,7 @@ class RefundController extends Controller
         return $direction === 'desc' ? $orders->sortByDesc($keyBy)->values() : $orders->sortBy($keyBy)->values();
     }
 
-    // Default: most recently out-of-stock first.
+    // Sort refunded items
     private function sortItems(\Illuminate\Support\Collection $items): \Illuminate\Support\Collection
     {
         $sort = request('sort');
@@ -82,16 +77,10 @@ class RefundController extends Controller
         return $direction === 'desc' ? $items->sortByDesc($keyBy)->values() : $items->sortBy($keyBy)->values();
     }
 
-    /**
-     * Toggle whether this item's refund has been processed. A simple
-     * on/off flag — same pattern as Order's "paid" toggle — rather than a
-     * whole approval workflow, since this is just a bookkeeping checkbox
-     * for the receptionist/manager/admin.
-     */
+    // Toggle item refund status
     public function markRefunded(OrderItem $item)
     {
-        // Grab the amount (and whether the order was paid) before toggling,
-        // purely to phrase the flash message correctly below.
+        // Amount before toggling
         $refundAmount = $item->refundAmount();
 
         $item->update([
@@ -103,14 +92,14 @@ class RefundController extends Controller
         } elseif ($refundAmount > 0) {
             $message = "Terugbetaling voor '{$item->product}' (bestelling #{$item->order_id}) genoteerd.";
         } else {
-            // Order was never paid — nothing was actually refunded, just acknowledged.
+            // Order was never paid
             $message = "'{$item->product}' (bestelling #{$item->order_id}) gemarkeerd als verwerkt — bestelling was niet betaald, dus geen terugbetaling nodig.";
         }
 
         return redirect()->back()->with('success', $message);
     }
 
-    // Same toggle, but for a whole refused/failed paid order.
+    // Toggle order refund status
     public function markOrderRefunded(Order $order)
     {
         $order->update([
