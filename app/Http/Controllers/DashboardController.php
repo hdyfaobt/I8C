@@ -11,10 +11,7 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
-    /**
-     * Role-aware overview — separate page, linked from the navbar.
-     * Not the app's home (/ still redirects straight to orders.index).
-     */
+    // Role-aware dashboard overview
     public function index()
     {
         $isPureOrderpicker = Auth::user()->hasRole('orderpicker') && ! Auth::user()->hasAnyRole(['admin', 'manager']);
@@ -40,7 +37,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    // Same rule as DebtController — unpaid, non-cancelled/refused orders.
+    // Total unpaid, active orders
     private function debtorsTotal(): float
     {
         return Customer::with(['orders' => function ($query) {
@@ -51,7 +48,7 @@ class DashboardController extends Controller
             ->sum(fn (Customer $customer) => $customer->orders->sum(fn (Order $order) => $order->outstandingBalance()));
     }
 
-    // Same rule as RefundController — out-of-stock items + whole refused/failed orders, not yet refunded.
+    // Total pending refunds
     private function refundsTotal(): float
     {
         $itemsTotal = OrderItem::whereNotNull('out_of_stock_at')
