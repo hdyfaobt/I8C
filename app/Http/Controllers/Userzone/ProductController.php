@@ -10,12 +10,7 @@ use Illuminate\Validation\Rule;
 
 class ProductController extends Controller
 {
-    /**
-     * Display the product catalog.
-     * Viewing is open to receptionist/admin/manager (see routes/web.php) —
-     * anyone who might need to look up a price or article number while
-     * placing an order.
-     */
+    // Display product catalog
     public function index()
     {
         $sortable = ['id', 'article_number', 'name', 'price'];
@@ -27,10 +22,10 @@ class ProductController extends Controller
         return view('userzone.products.index', compact('products'));
     }
 
-    // Never a real sale, excluded from revenue.
+    // Excluded from revenue
     private const NON_REVENUE_STATUSES = ['cancelled', 'refused', 'failed'];
 
-    // Product rename fallback, see add_product_id_to_order_items_table.
+    // Product order history
     public function history(Product $product)
     {
         $items = OrderItem::with(['order.customer'])
@@ -42,7 +37,7 @@ class ProductController extends Controller
             })
             ->whereHas('order')
             ->get()
-            // Out of stock = never actually delivered, so leave it out entirely.
+            // Exclude out-of-stock items
             ->reject(fn (OrderItem $item) => $item->isOutOfStock())
             ->sortByDesc(fn (OrderItem $item) => $item->order->created_at)
             ->values();
@@ -57,12 +52,7 @@ class ProductController extends Controller
         return view('userzone.products.history', compact('product', 'items', 'totalOrders', 'totalQuantity', 'totalRevenue'));
     }
 
-    /**
-     * Search products by name or article number.
-     * Used by the async product combobox on the order creation form so the
-     * user can search "salami", "chèvre", ... instead of scrolling a huge
-     * list (same pattern as CustomerController::search(), AJAX/JSON).
-     */
+    // Search products (AJAX)
     public function search(Request $request)
     {
         $query = trim((string) $request->query('q', ''));
@@ -119,11 +109,7 @@ class ProductController extends Controller
             ->with('success', 'Product succesvol bijgewerkt.');
     }
 
-    /**
-     * Delete a product from the catalog.
-     * Note: this only removes it from the catalog — order_items keep their
-     * own product/price snapshot, so past orders are unaffected.
-     */
+    // Delete product from catalog
     public function destroy(Product $product)
     {
         $product->delete();
