@@ -5,26 +5,19 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * A catalog product — managed by admins/managers, browsed by receptionists
- * when placing an order. See ProductController.
- */
+// Catalog product
 class Product extends Model
 {
     use HasFactory;
 
-    /**
-     * The fields that are mass-assignable.
-     */
+    // Mass-assignable fields
     protected $fillable = [
         'article_number',
         'name',
         'price',
     ];
 
-    /**
-     * Cast fields to proper PHP types.
-     */
+    // Type casts
     protected $casts = [
         'price' => 'decimal:2',
     ];
