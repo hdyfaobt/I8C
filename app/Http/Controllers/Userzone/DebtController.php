@@ -6,20 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\Order;
 
-/**
- * "How much does each customer still owe us" — a simple overview built on
- * top of Order::outstandingBalance(), which already accounts for
- * out-of-stock items (they don't count towards the debt, see that method's
- * docblock). Separate from RefundController: refunds are money we owe
- * customers back, this page is money customers still owe us.
- */
+// Customer debt overview
 class DebtController extends Controller
 {
-    /**
-     * List every customer who still owes money, highest debt first.
-     * Cancelled/refused orders never counted in the first place — they
-     * never became a real obligation to pay.
-     */
+    // List customers who owe money
     public function index()
     {
         $customers = Customer::with(['orders' => function ($query) {
@@ -50,7 +40,7 @@ class DebtController extends Controller
         return view('userzone.debts.index', compact('debts', 'grandTotal'));
     }
 
-    // Default: highest debt first.
+    // Sort debts by column
     private function sortDebts(\Illuminate\Support\Collection $debts): \Illuminate\Support\Collection
     {
         $sort = request('sort');
