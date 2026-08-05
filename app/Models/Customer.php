@@ -10,10 +10,7 @@ class Customer extends Model
 {
     use HasFactory;
 
-    /**
-     * The fields that are mass-assignable.
-     * These can be set via create() or update().
-     */
+    // Mass-assignable fields
     protected $fillable = [
         'name',
         'email',
@@ -23,19 +20,13 @@ class Customer extends Model
         'salesforce_id',
     ];
 
-    /**
-     * A customer can have many orders.
-     */
+    // Has many orders
     public function orders(): HasMany
     {
         return $this->hasMany(Order::class);
     }
 
-    /**
-     * A human-friendly customer number, derived from the id — same idea as
-     * Order::invoiceNumber(). Purely presentational, not stored, so it never
-     * needs to be kept in sync separately.
-     */
+    // Human-friendly customer number
     public function customerNumber(): string
     {
         return 'KLT-'.str_pad((string) $this->id, 6, '0', STR_PAD_LEFT);
