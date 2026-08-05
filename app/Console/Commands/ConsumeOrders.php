@@ -12,28 +12,13 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class ConsumeOrders extends Command
 {
-    /**
-     * The artisan command signature.
-     * Run with: php artisan rabbitmq:consume
-     *
-     * NOTE: this is now OPTIONAL. Orders are processed synchronously as
-     * soon as a receptionist/orderpicker clicks "Accepteren" or "Opnieuw
-     * proberen" on the website (see OrderController + OrderSyncService) —
-     * nobody needs to keep this command running for the app to work.
-     * It's kept around as a safety net (e.g. an order published but never
-     * synced because the web request got interrupted) and as a visible
-     * example of the RabbitMQ consumer pattern.
-     */
+    // Optional safety-net worker
     protected $signature = 'rabbitmq:consume';
 
-    /**
-     * Description shown in php artisan list.
-     */
-    protected $description = 'Listen to the RabbitMQ orders queue and process incoming messages (optional — see class docblock)';
+    // Shown in artisan list
+    protected $description = 'Listen to the RabbitMQ orders queue and process incoming messages (optional)';
 
-    /**
-     * Start the consumer loop — runs indefinitely until stopped (Ctrl+C).
-     */
+    // Start the consumer loop
     public function handle(): void
     {
         $this->info('[RabbitMQ Consumer] Starting... Press Ctrl+C to stop.');
@@ -42,7 +27,7 @@ class ConsumeOrders extends Command
             $connection = $this->connect();
             $channel = $connection->channel();
 
-            // Declare the same queue as the publisher (idempotent)
+            // Declare queue (idempotent)
             $channel->queue_declare(
                 queue: config('rabbitmq.queue'),
                 passive: false,
@@ -51,20 +36,12 @@ class ConsumeOrders extends Command
                 auto_delete: false
             );
 
-            // Only fetch 1 message at a time — fair dispatch
+            // One message at a time
             $channel->basic_qos(prefetch_size: 0, prefetch_count: 1, a_global: false);
 
             $this->info('[RabbitMQ Consumer] Waiting for messages on queue: '.config('rabbitmq.queue'));
 
-            // NOTE: we deliberately do NOT auto-retry here. An immediate
-            // requeue would hit Salesforce again within milliseconds, with
-            // the exact same data — if it failed once, it will fail the
-            // same way every time right away (bad payload, closed
-            // opportunity, expired token, ...). Retrying blindly like that
-            // is pointless. Instead, a single failed attempt leaves the
-            // order with status "failed" so a human can inspect it and
-            // trigger a manual retry later (see OrderController::retry()),
-            // once whatever caused the failure has actually been fixed.
+            // No auto-retry on failure
             $callback = function (AMQPMessage $message) {
                 $data = json_decode($message->body, true);
 
@@ -72,10 +49,7 @@ class ConsumeOrders extends Command
 
                 $success = $this->processOrder($data);
 
-                // Always acknowledge: the order's status ('sent' or 'failed')
-                // is now stored in the database, so the message itself no
-                // longer needs to stay in the queue. Manual retries publish
-                // a brand new message instead of relying on requeueing.
+                // Always acknowledge the message
                 $message->ack();
 
                 if ($success) {
@@ -95,7 +69,7 @@ class ConsumeOrders extends Command
                 callback: $callback
             );
 
-            // Keep listening until the channel is closed
+            // Listen until channel closes
             while ($channel->is_consuming()) {
                 $channel->wait();
             }
@@ -109,17 +83,7 @@ class ConsumeOrders extends Command
         }
     }
 
-    /**
-     * Process a received order message.
-     * Delegates the actual sync + status update to OrderSyncService, the
-     * same service OrderController uses for the synchronous accept/retry
-     * flow — so there is only one place that knows how to sync an order to
-     * Salesforce and update its status, regardless of whether it's called
-     * from the website directly or from this background worker.
-     *
-     * @param  array  $data  The decoded message payload
-     * @return bool True on success, false on failure
-     */
+    // Process one order message
     private function processOrder(array $data): bool
     {
         try {
@@ -131,11 +95,7 @@ class ConsumeOrders extends Command
                 return false;
             }
 
-            // OrderSyncService itself skips anything that isn't 'pending'
-            // (e.g. already processed synchronously by the website, or
-            // cancelled while the message was sitting in the queue) —
-            // so this is safe to call even on an order that was already
-            // handled elsewhere.
+            // Skips already-handled orders
             return app(OrderSyncService::class)->process($order);
 
         } catch (\Exception $e) {
@@ -145,9 +105,7 @@ class ConsumeOrders extends Command
         }
     }
 
-    /**
-     * Open a RabbitMQ connection (SSL or plain).
-     */
+    // Open RabbitMQ connection
     private function connect(): AMQPSSLConnection|AMQPStreamConnection
     {
         $host = config('rabbitmq.host');
