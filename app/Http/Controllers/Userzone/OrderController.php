@@ -15,44 +15,22 @@ use Illuminate\Support\Facades\Auth;
 
 class OrderController extends Controller
 {
-    /**
-     * Statuses visible to a pure orderpicker — only orders that have
-     * actually reached Salesforce onwards. An orderpicker has nothing to
-     * do with an order that's still awaiting review, queued, refused,
-     * cancelled or failed, so those are hidden from their list entirely.
-     */
+    // Statuses visible to orderpicker
     private const ORDERPICKER_VISIBLE_STATUSES = ['sent', 'ready_for_pickup', 'received'];
 
-    /**
-     * Display the list of all orders, newest first.
-     * An orderpicker only sees orders already synced to Salesforce (see
-     * ORDERPICKER_VISIBLE_STATUSES) — receptionist/admin/manager see
-     * everything, since they handle the full lifecycle.
-     *
-     * Cancelled orders are split out into their own $cancelledOrders
-     * collection rather than mixed into $orders — the view renders them in
-     * a separate "Geannuleerde bestellingen" table below the main one, so
-     * a dead-end order doesn't clutter the list of orders that still need
-     * attention, without actually disappearing (its Details link still
-     * works). Reordering it happens from the create-order form instead of
-     * a button here — see CustomerController::orders() and repeat() below.
-     */
+    // List all orders
     public function index()
     {
         $isPureOrderpicker = $this->isPureOrderpicker();
 
-        // Sorted by id, not created_at — the id is a reliable, always-increasing
-        // order number, while created_at can be backdated (e.g. demo/seeded
-        // data), which would otherwise show orders in a mismatched sequence.
+        // Sort by id, not date
         $query = Order::with(['customer', 'items'])->latest('id');
 
         if ($isPureOrderpicker) {
             $query->whereIn('status', self::ORDERPICKER_VISIBLE_STATUSES);
         }
 
-        // Dashboard shortcut filter — e.g. ?status=sent or ?status=sent&mine=1
-        // for "In behandeling door mij". Narrows the list only, never widens
-        // it past what the role above is already allowed to see.
+        // Dashboard shortcut filter
         $statusFilter = array_filter(explode(',', (string) request('status', '')));
         if ($statusFilter !== []) {
             $query->whereIn('status', $statusFilter);
@@ -70,7 +48,7 @@ class OrderController extends Controller
         return view('userzone.orders.index', compact('orders', 'cancelledOrders', 'isPureOrderpicker', 'hasActiveFilter'));
     }
 
-    // Column sort for the orders list, 3-state cycle from the header links.
+    // Column sort for orders list
     private function sortOrders(Collection $orders): Collection
     {
         $direction = request('direction', 'asc');
@@ -92,12 +70,7 @@ class OrderController extends Controller
         return $direction === 'desc' ? $orders->sortByDesc($keyBy)->values() : $orders->sortBy($keyBy)->values();
     }
 
-    /**
-     * True when the logged-in user is an orderpicker and nothing more
-     * privileged (admin/manager already see everything, so the filter
-     * doesn't apply to them even if they also happen to hold the
-     * orderpicker role).
-     */
+    // Orderpicker only, no other role
     private function isPureOrderpicker(): bool
     {
         $user = Auth::user();
@@ -105,15 +78,10 @@ class OrderController extends Controller
         return $user->hasRole('orderpicker') && ! $user->hasAnyRole(['admin', 'manager']);
     }
 
-    /**
-     * Show the form to create a new order.
-     * Customers are no longer preloaded here — the form fetches them on-demand
-     * via the customers.search endpoint (see CustomerController::search()).
-     */
+    // Show order creation form
     public function create()
     {
-        // If we're redisplaying the form after a validation error, reload the
-        // previously selected customer so the search combobox can show it again.
+        // Reload previously selected customer
         $selectedCustomer = null;
 
         if (old('customer_id')) {
@@ -132,25 +100,7 @@ class OrderController extends Controller
         return view('userzone.orders.create', compact('selectedCustomer'));
     }
 
-    /**
-     * Validate and store a new order with one or more product lines.
-     * Status starts as 'awaiting_review' — nothing is sent to RabbitMQ yet.
-     * A receptionist (see accept()/refuse() below) has to review the order
-     * first. This is a manual business decision, separate from the
-     * technical Salesforce sync outcome ('sent'/'failed').
-     *
-     * Every line has to reference a real catalog product — `product_id`
-     * must exist in the `products` table, and the product's name is looked
-     * up here (not trusted from the request) so a line can never be
-     * something typed by hand that isn't actually in the catalog. The name
-     * is still copied onto the OrderItem as a snapshot rather than a live
-     * foreign key, same as before — so it stays accurate even if the
-     * product is later renamed or removed from the catalog.
-     *
-     * 'created_by' records who took/placed the order — the logged-in
-     * receptionist submitting this form — for the "who did what" tracking
-     * shown on the order detail page.
-     */
+    // Create a new order
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -180,8 +130,6 @@ class OrderController extends Controller
             ]);
         }
 
-        // A receptionist placing it is the validation — sent straight to
-        // the orderpicker, no separate manual review step.
         $synced = $this->syncOrderNow($order);
 
         $message = $synced
@@ -191,7 +139,7 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', $message);
     }
 
-    // Accept an order right after creation — no manual review step.
+    // Sync order immediately
     private function syncOrderNow(Order $order): bool
     {
         $order->update(['status' => 'pending', 'accepted_at' => now()]);
@@ -202,7 +150,7 @@ class OrderController extends Controller
         return app(OrderSyncService::class)->process($order);
     }
 
-    // Same visibility rule as index() for orderpickers.
+    // Show order details
     public function show(Order $order)
     {
         if ($this->isPureOrderpicker() && ! in_array($order->status, self::ORDERPICKER_VISIBLE_STATUSES, true)) {
@@ -211,14 +159,14 @@ class OrderController extends Controller
 
         $order->load(['customer', 'items', 'createdBy', 'preparedBy', 'receivedBy']);
 
-        // Admin/manager always can. Orderpicker only after "Overnemen".
+        // Admin/manager, or assigned orderpicker
         $canWorkOnPicking = Auth::user()->hasAnyRole(['admin', 'manager'])
             || $order->prepared_by === Auth::id();
 
         return view('userzone.orders.show', compact('order', 'canWorkOnPicking'));
     }
 
-    // 'created_by' is whoever triggers THIS reorder, not the original.
+    // Duplicate a past order
     public function repeat(Order $order)
     {
         $order->load('items');
@@ -252,17 +200,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', $message);
     }
 
-    /**
-     * Accept an order awaiting review.
-     * This is the human "go ahead" decision. The order is published to
-     * RabbitMQ (the queue is still genuinely used) and then synced to
-     * Salesforce immediately, in this same request — nobody has to keep a
-     * separate `rabbitmq:consume` process running in a terminal for orders
-     * to actually go through; it all happens right from the website.
-     * Restricted to receptionist/admin/manager (see routes/web.php) —
-     * orderpicker only steps in once the order has already been accepted
-     * and synced.
-     */
+    // Accept an order for review
     public function accept(Order $order)
     {
         if ($order->status !== 'awaiting_review') {
@@ -282,11 +220,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', $message);
     }
 
-    /**
-     * Refuse an order awaiting review.
-     * A business decision, not a technical failure — a refused order never
-     * reaches RabbitMQ or Salesforce. Restricted to receptionist/admin/manager.
-     */
+    // Refuse an order under review
     public function refuse(Order $order)
     {
         if ($order->status !== 'awaiting_review') {
@@ -298,21 +232,14 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Bestelling #'.$order->id.' geweigerd.');
     }
 
-    /**
-     * Manually retry a previously failed order — or nudge one that's stuck
-     * on 'pending' (e.g. from before this app started processing orders
-     * synchronously, or if a message was published but the request got cut
-     * off before the sync ran). Republishes to RabbitMQ and processes it
-     * immediately, exactly like accept().
-     */
+    // Retry a failed order
     public function retry(Order $order)
     {
         if (! in_array($order->status, ['pending', 'failed'], true)) {
             return redirect()->back()->with('success', 'Bestelling #'.$order->id.' staat niet op "mislukt" of "in afwachting" en kan niet opnieuw verwerkt worden.');
         }
 
-        // Reset to 'pending' first if it had failed — OrderSyncService
-        // only processes orders that are 'pending'.
+        // Reset to pending first
         if ($order->status === 'failed') {
             $order->update(['status' => 'pending']);
         }
@@ -330,18 +257,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', $message);
     }
 
-    /**
-     * Cancel an order that is still active — either 'awaiting_review'
-     * (not yet looked at by a receptionist) or 'pending' (accepted and
-     * queued, but not yet synced to Salesforce). Once an order is 'sent'
-     * it already exists as an Opportunity in Salesforce, and
-     * 'failed'/'refused'/'cancelled' orders are already out of the active
-     * flow, so cancelling no longer applies.
-     * The RabbitMQ message may still be sitting in the queue at this point;
-     * ConsumeOrders::processOrder() re-checks the status before syncing to
-     * Salesforce, so a cancelled order is safely skipped even if it was
-     * already published.
-     */
+    // Cancel a still-active order
     public function cancel(Order $order)
     {
         if (! in_array($order->status, ['awaiting_review', 'pending'], true)) {
@@ -353,7 +269,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Bestelling #'.$order->id.' geannuleerd.');
     }
 
-    // Admin only, e.g. to clean up an empty/broken order.
+    // Permanently delete an order
     public function destroy(Order $order)
     {
         $orderId = $order->id;
@@ -363,21 +279,10 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Bestelling #'.$orderId.' definitief verwijderd.');
     }
 
-    /**
-     * Toggle whether a single order item has been physically picked.
-     * Restricted to orderpicker/admin/manager (see routes/web.php).
-     * A simple toggle rather than a one-way action, so a mistaken click
-     * can be undone without any extra UI.
-     *
-     * Picked and out-of-stock are mutually exclusive: marking an item
-     * picked also clears any out-of-stock flag on it (it clearly wasn't
-     * out of stock after all).
-     */
+    // Toggle item picked status
     public function pickItem(Order $order, OrderItem $item)
     {
-        // Make sure the item actually belongs to this order — without this
-        // check, someone could pick an item from order #5 through a request
-        // pointing at order #6's URL.
+        // Verify item belongs to order
         abort_unless($item->order_id === $order->id, 404);
 
         $item->update([
@@ -388,16 +293,7 @@ class OrderController extends Controller
         return redirect()->back();
     }
 
-    /**
-     * Report a single order item as out of stock instead of picked — the
-     * orderpicker found it's actually not available. Restricted to
-     * orderpicker/admin/manager (see routes/web.php).
-     *
-     * Mutually exclusive with "picked", same reasoning as pickItem().
-     * Marking it (not un-marking) also appends a note to the order for the
-     * customer, since this item will need to be refunded — see
-     * OrderController::updatePickingComment() for where that note lives.
-     */
+    // Toggle item out-of-stock status
     public function markItemOutOfStock(Order $order, OrderItem $item)
     {
         abort_unless($item->order_id === $order->id, 404);
@@ -420,13 +316,7 @@ class OrderController extends Controller
         return redirect()->back();
     }
 
-    /**
-     * Claim an order for preparation and jump straight to its detail page,
-     * where the actual work happens: tick each item off as picked (or
-     * report it out of stock), then mark the whole order ready once every
-     * line has an outcome — see Order::allItemsResolved() and markReady().
-     * Restricted to orderpicker/admin/manager (see routes/web.php).
-     */
+    // Claim order for preparation
     public function takeCharge(Order $order)
     {
         if ($order->status === 'sent') {
@@ -436,11 +326,7 @@ class OrderController extends Controller
         return redirect()->route('orders.show', $order);
     }
 
-    /**
-     * Save the orderpicker's free-text note about this order (e.g. a
-     * substitution, a missing item, ...). Restricted to
-     * orderpicker/admin/manager.
-     */
+    // Save picking note
     public function updatePickingComment(Request $request, Order $order)
     {
         $validated = $request->validate([
@@ -452,16 +338,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Opmerking opgeslagen voor bestelling #'.$order->id.'.');
     }
 
-    /**
-     * Orderpicker confirms the order is fully picked and ready for pickup.
-     * Only allowed once Salesforce sync succeeded ('sent') and every item
-     * has actually been picked — this prevents marking an order ready by
-     * mistake while items are still missing.
-     *
-     * 'prepared_by' records which orderpicker actually assembled it — the
-     * "who took care of preparing it" half of the order's accountability
-     * trail, alongside created_by and received_by.
-     */
+    // Mark order ready for pickup
     public function markReady(Order $order)
     {
         if ($order->status !== 'sent') {
@@ -479,27 +356,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Bestelling #'.$order->id.' is klaar om opgehaald te worden.');
     }
 
-    /**
-     * Toggle whether an order has been paid.
-     * Deliberately independent from the order's `status` lifecycle
-     * (awaiting_review/pending/sent/.../received) — payment can happen at
-     * any point and never gates or blocks any of the other actions above.
-     *
-     * Marking an order as paid (receptionist/admin/manager, per the route
-     * middleware) requires a payment method — "bank_transfer" (covers both
-     * a regular transfer and Bancontact) or "cash" — so there's a record of
-     * how the customer paid, not just that they did.
-     *
-     * Undoing a payment once it's already marked paid is admin/manager
-     * only: a receptionist can register a payment but can't reverse one,
-     * so a mistaken "Betaald" click can't just be quietly undone by
-     * whoever placed it. Enforced here (not just hidden in the view) so
-     * it can't be bypassed by posting to the route directly.
-     *
-     * A cancelled order can never be paid — it's a dead end in the
-     * workflow, there's nothing left to collect payment for. Rejected
-     * up front, before even checking the paid/unpaid branches below.
-     */
+    // Toggle order paid status
     public function togglePaid(Request $request, Order $order)
     {
         if ($order->status === 'cancelled') {
@@ -531,13 +388,7 @@ class OrderController extends Controller
         return redirect()->back()->with('success', 'Bestelling #'.$order->id.' gemarkeerd als betaald.');
     }
 
-    /**
-     * Render a standalone, printable invoice sheet for an order (seller +
-     * buyer details, line items, article count, payment reference and
-     * bank account). Opened in a new tab so the order page stays open
-     * behind it. Restricted to receptionist/admin/manager, same as the
-     * other order-management actions.
-     */
+    // Render printable invoice
     public function print(Order $order)
     {
         $order->load(['customer', 'items']);
@@ -545,14 +396,7 @@ class OrderController extends Controller
         return view('userzone.orders.print', compact('order'));
     }
 
-    /**
-     * Receptionist confirms the customer actually received/collected the
-     * order. This is the final, successful step of the order lifecycle.
-     * Restricted to receptionist/admin/manager.
-     *
-     * 'received_by' records who actually handed the order over — the last
-     * leg of the created_by/prepared_by/received_by accountability trail.
-     */
+    // Confirm order received by customer
     public function markReceived(Order $order)
     {
         if ($order->status !== 'ready_for_pickup') {
