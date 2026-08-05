@@ -10,20 +10,14 @@ use PhpAmqpLib\Message\AMQPMessage;
 
 class RabbitMQPublisher
 {
-    /**
-     * Publish an order message to the RabbitMQ queue.
-     * Called from OrderController after a new order is created.
-     *
-     * @param  Order  $order  The order to publish
-     * @return bool True on success, false on failure
-     */
+    // Publish order to queue
     public function publishOrder(Order $order): bool
     {
         try {
             $connection = $this->connect();
             $channel = $connection->channel();
 
-            // durable: true = queue survives a RabbitMQ restart
+            // Durable queue
             $channel->queue_declare(
                 queue: config('rabbitmq.queue'),
                 passive: false,
@@ -32,10 +26,7 @@ class RabbitMQPublisher
                 auto_delete: false
             );
 
-            // 'items' carries every product line — the consumer only uses
-            // this payload for logging though; the actual sync re-reads
-            // the order (with its items) fresh from the database, so this
-            // never goes stale between publish and consume.
+            // Payload for logging only
             $payload = json_encode([
                 'order_id' => $order->id,
                 'customer_id' => $order->customer_id,
@@ -50,7 +41,7 @@ class RabbitMQPublisher
                 'created_at' => $order->created_at->toISOString(),
             ]);
 
-            // delivery_mode: 2 = persistent (survives broker restart)
+            // Persistent message
             $message = new AMQPMessage($payload, [
                 'delivery_mode' => AMQPMessage::DELIVERY_MODE_PERSISTENT,
                 'content_type' => 'application/json',
@@ -76,10 +67,7 @@ class RabbitMQPublisher
         }
     }
 
-    /**
-     * Open a connection to RabbitMQ.
-     * Uses SSL (AMQPSSLConnection) for CloudAMQP, plain for local.
-     */
+    // Open RabbitMQ connection
     private function connect(): AMQPSSLConnection|AMQPStreamConnection
     {
         $host = config('rabbitmq.host');
