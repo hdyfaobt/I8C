@@ -9,11 +9,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 use Spatie\Permission\Models\Role;
 
-/**
- * Admin-only account management: create, edit and remove user accounts
- * and assign them a role (admin / manager / receptionist / orderpicker).
- * Access is restricted by the "role:admin" middleware on the route group.
- */
+// Admin-only user management
 class UserController extends Controller
 {
     public function index()
@@ -37,9 +33,7 @@ class UserController extends Controller
         return view('admin.users.create', compact('roles'));
     }
 
-    /**
-     * Validate and create a new account with the selected role.
-     */
+    // Create a new account
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -69,10 +63,7 @@ class UserController extends Controller
         return view('admin.users.edit', compact('user', 'roles'));
     }
 
-    /**
-     * Update an existing account's name, email and role.
-     * Password is only updated when a new one is provided.
-     */
+    // Update account details
     public function update(Request $request, User $user)
     {
         $validated = $request->validate([
@@ -96,10 +87,7 @@ class UserController extends Controller
             ->with('success', "Account van {$user->name} bijgewerkt.");
     }
 
-    /**
-     * Delete an account.
-     * Admins cannot delete their own account (avoids accidental lockout).
-     */
+    // Delete an account
     public function destroy(Request $request, User $user)
     {
         if ($request->user()->is($user)) {
