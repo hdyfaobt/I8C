@@ -6,10 +6,6 @@ use App\Http\Controllers\Auth\PasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use Illuminate\Support\Facades\Route;
 
-// Self-registration is deliberately not offered — every account is created
-// by an admin via /admin/users (see Admin/UserController), so a role is
-// always assigned up front and nobody ends up logged in with no
-// permissions at all.
 Route::middleware('guest')->group(function () {
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
