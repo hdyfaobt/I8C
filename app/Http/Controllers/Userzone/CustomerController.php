@@ -50,11 +50,7 @@ class CustomerController extends Controller
             ->with('success', 'Klant succesvol aangemaakt.');
     }
 
-    /**
-     * Search customers by name, email or company.
-     * Used by the async combobox on the order creation form so we never
-     * load thousands of customers into a single <select> at once (AJAX, JSON response).
-     */
+    // Search customers (AJAX)
     public function search(Request $request)
     {
         $query = trim((string) $request->query('q', ''));
@@ -74,19 +70,7 @@ class CustomerController extends Controller
         return response()->json($customers);
     }
 
-    /**
-     * List a customer's past orders (AJAX/JSON), for the "previous orders"
-     * panel on the order creation form — see resources/views/layouts/
-     * app.blade.php (customerSearch Alpine component). This replaced the
-     * old per-row "Herbestellen" button on the orders list: reordering now
-     * happens right where you're already picking a customer, instead of
-     * hunting through the whole orders list for the right one to copy.
-     *
-     * No status filter — a cancelled/refused order still shows up here,
-     * it's just history, same reasoning as ProductController::history().
-     * Capped at the 10 most recent so this stays a quick glance, not a
-     * second full order list.
-     */
+    // Customer's past orders (AJAX)
     public function orders(Customer $customer)
     {
         $orders = $customer->orders()
@@ -99,10 +83,7 @@ class CustomerController extends Controller
                 'created_at' => $order->created_at->format('d/m/Y'),
                 'items_summary' => $order->items->pluck('product')->join(', '),
                 'total' => number_format($order->totalPrice(), 2, ',', '.'),
-                // Structured lines — lets the "create order" form prefill its own
-                // product rows (see create.blade.php) instead of placing the
-                // order straight away, unlike the one-click "Herbestellen" button
-                // elsewhere (see OrderController::repeat()).
+                // Prefill data for reorder form
                 'items' => $order->items->map(fn ($item) => [
                     'product_id' => $item->product_id,
                     'product' => $item->product,
@@ -144,7 +125,7 @@ class CustomerController extends Controller
             ->with('success', 'Klant succesvol bijgewerkt.');
     }
 
-    // Blocked if the customer has orders — sales history must stay.
+    // Blocked if customer has orders
     public function destroy(Customer $customer)
     {
         if ($customer->orders()->exists()) {
@@ -157,11 +138,7 @@ class CustomerController extends Controller
             ->with('success', 'Klant succesvol verwijderd.');
     }
 
-    /**
-     * Confirm a new customer to Salesforce with a single button — no terminal
-     * needed, same idea as the order sync (ConsumeOrders). Reuses
-     * SalesforceService::syncCustomer(), which creates or links the Account.
-     */
+    // Sync customer to Salesforce
     public function syncToSalesforce(Customer $customer)
     {
         $accountId = app(SalesforceService::class)->syncCustomer($customer);
