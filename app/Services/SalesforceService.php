@@ -13,13 +13,7 @@ class SalesforceService
 
     private ?string $instanceUrl = null;
 
-    /**
-     * Authenticate with Salesforce using the OAuth 2.0 Client Credentials flow.
-     * This is a server-to-server flow: only the Connected/External Client App's
-     * Client ID and Secret are needed — no user username/password/security
-     * token. The API acts as the "Run As" user configured on the app in
-     * Salesforce (Setup → App → OAuth Settings → Client Credentials Flow).
-     */
+    // OAuth client credentials auth
     public function authenticate(): void
     {
         $response = Http::asForm()->post(config('salesforce.login_url').'/services/oauth2/token', [
@@ -39,10 +33,7 @@ class SalesforceService
         $this->instanceUrl = $data['instance_url'];
     }
 
-    /**
-     * Sync an order to Salesforce: create/update Account, create Opportunity.
-     * Returns the Salesforce Opportunity ID on success, null on failure.
-     */
+    // Sync order to Salesforce
     public function syncOrder(Order $order): ?string
     {
         try {
@@ -76,13 +67,7 @@ class SalesforceService
         }
     }
 
-    /**
-     * Sync a customer to Salesforce as an Account, without needing an Order.
-     * This is what lets a manager/admin/receptionist confirm a newly created
-     * customer with a single button, instead of waiting for their first order
-     * to trigger the sync via syncOrder() above. Returns the Salesforce
-     * Account ID on success, null on failure.
-     */
+    // Sync customer as Account
     public function syncCustomer(Customer $customer): ?string
     {
         try {
@@ -134,18 +119,14 @@ class SalesforceService
 
     private function createOpportunity(Order $order, string $accountId): string
     {
-        // Include the order number, customer name and first product in the
-        // Opportunity name so it's recognizable in Salesforce list views,
-        // without having to open the record. An order can have several
-        // products now — the rest are listed in the Description instead.
+        // Recognizable Opportunity name
         $firstProduct = $order->items->first()?->product ?? 'Bestelling';
         $extraItemsCount = max($order->items->count() - 1, 0);
         $productLabel = $firstProduct.($extraItemsCount > 0 ? " (+{$extraItemsCount})" : '');
 
         $opportunityName = "Bestelling #{$order->id} — {$order->customer->name} — {$productLabel}";
 
-        // One line per product, e.g. "3x Widget A — €12.50", so the full
-        // order content is visible in Salesforce without a custom object.
+        // One line per product
         $itemLines = $order->items->map(
             fn ($item) => "{$item->quantity}x {$item->product} — € ".number_format($item->unit_price, 2)
         )->implode("\n");
