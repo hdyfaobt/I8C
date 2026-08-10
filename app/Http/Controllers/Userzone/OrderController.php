@@ -18,6 +18,9 @@ class OrderController extends Controller
     // Statuses visible to orderpicker
     private const ORDERPICKER_VISIBLE_STATUSES = ['sent', 'ready_for_pickup', 'received'];
 
+    // Statuses where picking actions are allowed
+    private const PICKING_ACTIVE_STATUSES = ['sent', 'ready_for_pickup'];
+
     // List all orders
     public function index()
     {
@@ -285,6 +288,9 @@ class OrderController extends Controller
         // Verify item belongs to order
         abort_unless($item->order_id === $order->id, 404);
 
+        // Only while order is being picked
+        abort_unless(in_array($order->status, self::PICKING_ACTIVE_STATUSES, true), 403);
+
         $item->update([
             'picked_at' => $item->picked_at ? null : now(),
             'out_of_stock_at' => null,
@@ -297,6 +303,9 @@ class OrderController extends Controller
     public function markItemOutOfStock(Order $order, OrderItem $item)
     {
         abort_unless($item->order_id === $order->id, 404);
+
+        // Only while order is being picked
+        abort_unless(in_array($order->status, self::PICKING_ACTIVE_STATUSES, true), 403);
 
         $wasOutOfStock = $item->isOutOfStock();
 
@@ -329,6 +338,9 @@ class OrderController extends Controller
     // Save picking note
     public function updatePickingComment(Request $request, Order $order)
     {
+        // Only while order is being picked
+        abort_unless(in_array($order->status, self::PICKING_ACTIVE_STATUSES, true), 403);
+
         $validated = $request->validate([
             'picking_comment' => 'nullable|string|max:1000',
         ]);
