@@ -173,6 +173,36 @@ test('an item from another order cannot be picked through this order', function 
     $response->assertNotFound();
 });
 
+test('an item cannot be picked on an order not yet sent', function () {
+    $user = User::factory()->create();
+    $user->assignRole('orderpicker');
+    $order = Order::factory()->create(['status' => 'awaiting_review']);
+
+    $response = $this->actingAs($user)->post(route('orders.items.pick', [$order, $order->items->first()]));
+
+    $response->assertForbidden();
+});
+
+test('an item cannot be marked out of stock on a cancelled order', function () {
+    $user = User::factory()->create();
+    $user->assignRole('orderpicker');
+    $order = Order::factory()->create(['status' => 'cancelled']);
+
+    $response = $this->actingAs($user)->post(route('orders.items.outOfStock', [$order, $order->items->first()]));
+
+    $response->assertForbidden();
+});
+
+test('the picking comment cannot be updated on an order not yet sent', function () {
+    $user = User::factory()->create();
+    $user->assignRole('orderpicker');
+    $order = Order::factory()->create(['status' => 'pending']);
+
+    $response = $this->actingAs($user)->post(route('orders.pickingComment', $order), ['picking_comment' => 'test']);
+
+    $response->assertForbidden();
+});
+
 test('receptionist cannot pick order items', function () {
     $user = User::factory()->create();
     $user->assignRole('receptionist');
