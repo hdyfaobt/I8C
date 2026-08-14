@@ -17,8 +17,7 @@ class RefundController extends Controller
             ->latest('out_of_stock_at')
             ->get();
 
-        $orders = Order::where('paid', true)
-            ->whereIn('status', ['refused', 'failed'])
+        $orders = Order::refundEligible()
             ->with('customer')
             ->latest('id')
             ->get();
