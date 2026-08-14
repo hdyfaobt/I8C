@@ -12,60 +12,15 @@
                 <form method="POST" action="{{ route('customers.store') }}">
                     @csrf
 
-                    {{-- Name --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
-                        <input type="text" name="name" value="{{ old('name') }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="Jan Janssen">
-                        @error('name')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Naam" name="name" :value="old('name')" placeholder="Jan Janssen" required />
 
-                    {{-- Email --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">E-mailadres *</label>
-                        <input type="email" name="email" value="{{ old('email') }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="jan@bedrijf.be">
-                        @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="E-mailadres" name="email" type="email" :value="old('email')" placeholder="jan@bedrijf.be" required />
 
-                    {{-- Phone --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefoonnummer</label>
-                        <input type="text" name="phone" value="{{ old('phone') }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="+32 470 00 00 00">
-                        @error('phone')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Telefoonnummer" name="phone" :value="old('phone')" placeholder="+32 470 00 00 00" />
 
-                    {{-- Company --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Bedrijf</label>
-                        <input type="text" name="company" value="{{ old('company') }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="Bedrijf NV">
-                        @error('company')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Bedrijf" name="company" :value="old('company')" placeholder="Bedrijf NV" />
 
-                    {{-- Address --}}
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Adres</label>
-                        <textarea name="address" rows="3"
-                                  class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                                  placeholder="Straat 1, 1000 Brussel">{{ old('address') }}</textarea>
-                        @error('address')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Adres" name="address" type="textarea" :value="old('address')" placeholder="Straat 1, 1000 Brussel" last />
 
                     {{-- Buttons --}}
                     <div class="flex items-center justify-between">
