@@ -1,15 +1,4 @@
-{{--
-    Reusable payment confirmation alert — replaces the native browser
-    confirm() popup with a translucent, colored alert that matches the
-    site's look: green while confirming a payment (asks for the payment
-    method too), orange while undoing one. Used by orders/index.blade.php
-    (every row's "Betaling" button) and orders/show.blade.php.
-
-    Expects an ancestor element with Alpine state:
-        x-data="{ paymentModalOpen: false, paymentForm: null, paymentMode: 'pay', paying: false }"
-    Each trigger button should set it like this:
-        @click="paymentForm = $el.closest('form'); paymentMode = 'pay'; paymentModalOpen = true"
---}}
+{{-- Payment confirmation modal --}}
 <div x-show="paymentModalOpen"
      x-cloak
      style="display: none;"
@@ -22,7 +11,7 @@
             ? 'bg-green-100/80 border-green-300'
             : 'bg-orange-100/80 border-orange-300'">
 
-        {{-- Marking as paid — pick a payment method first --}}
+        {{-- Choose payment method --}}
         <template x-if="paymentMode === 'pay'">
             <div>
                 <p class="text-sm font-medium text-green-800">
@@ -54,7 +43,7 @@
             </div>
         </template>
 
-        {{-- Undoing a payment — admin/manager only, plain confirm --}}
+        {{-- Undo a payment --}}
         <template x-if="paymentMode === 'revert'">
             <div>
                 <p class="text-sm font-medium text-orange-800">
