@@ -40,12 +40,8 @@ class DashboardController extends Controller
     // Total unpaid, active orders
     private function debtorsTotal(): float
     {
-        return Customer::with(['orders' => function ($query) {
-            $query->where('paid', false)
-                ->whereNotIn('status', ['cancelled', 'refused'])
-                ->with('items');
-        }])->get()
-            ->sum(fn (Customer $customer) => $customer->orders->sum(fn (Order $order) => $order->outstandingBalance()));
+        return Customer::with(['unpaidActiveOrders.items'])->get()
+            ->sum(fn (Customer $customer) => $customer->unpaidActiveOrders->sum(fn (Order $order) => $order->outstandingBalance()));
     }
 
     // Total pending refunds
@@ -57,8 +53,7 @@ class DashboardController extends Controller
             ->get()
             ->sum(fn (OrderItem $item) => $item->refundAmount());
 
-        $ordersTotal = Order::where('paid', true)
-            ->whereIn('status', ['refused', 'failed'])
+        $ordersTotal = Order::refundEligible()
             ->whereNull('refunded_at')
             ->with('items')
             ->get()
