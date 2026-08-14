@@ -242,6 +242,10 @@ class OrderController extends Controller
             return redirect()->back()->with('success', 'Bestelling #'.$order->id.' staat niet op "mislukt" of "in afwachting" en kan niet opnieuw verwerkt worden.');
         }
 
+        if ($order->items()->count() === 0) {
+            return redirect()->back()->with('error', 'Bestelling #'.$order->id.' heeft geen producten en kan niet opnieuw verwerkt worden. Verwijder ze in plaats daarvan.');
+        }
+
         // Reset to pending first
         if ($order->status === 'failed') {
             $order->update(['status' => 'pending']);
@@ -317,9 +321,12 @@ class OrderController extends Controller
         if (! $wasOutOfStock) {
             $note = "Product '{$item->product}' is niet meer op voorraad — dit artikel moet aan de klant terugbetaald worden.";
 
-            $order->update([
-                'picking_comment' => trim(($order->picking_comment ? $order->picking_comment."\n" : '').$note),
-            ]);
+            // Skip if this note is already there
+            if (! str_contains((string) $order->picking_comment, $note)) {
+                $order->update([
+                    'picking_comment' => trim(($order->picking_comment ? $order->picking_comment."\n" : '').$note),
+                ]);
+            }
         }
 
         return redirect()->back();
