@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,6 +11,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Order extends Model
 {
     use HasFactory;
+
+    // Paid orders refused or failed
+    public function scopeRefundEligible(Builder $query): Builder
+    {
+        return $query->where('paid', true)->whereIn('status', ['refused', 'failed']);
+    }
 
     // Mass-assignable fields
     protected $fillable = [
@@ -90,12 +97,6 @@ class Order extends Model
         $outOfStockTotal = $this->items->sum(fn (OrderItem $item) => $item->isOutOfStock() ? $item->lineTotal() : 0);
 
         return $this->totalPrice() - $outOfStockTotal;
-    }
-
-    // Paid but refused/failed
-    public function refundEligible(): bool
-    {
-        return $this->paid && in_array($this->status, ['refused', 'failed'], true);
     }
 
     public function isRefunded(): bool
