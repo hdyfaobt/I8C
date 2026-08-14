@@ -1,13 +1,4 @@
-{{--
-    Shared labeled input for the create/edit forms (customers, products,
-    admin users) — same label + input + error markup was copy-pasted in
-    every one of those forms. Renders a <textarea> instead of <input>
-    when type="textarea".
-
-    Usage:
-        <x-form-field label="Naam" name="name" :value="old('name')" required />
-        <x-form-field label="Adres" name="address" type="textarea" :value="old('address')" last />
---}}
+{{-- Shared labeled input field --}}
 @props([
     'label',
     'name',
