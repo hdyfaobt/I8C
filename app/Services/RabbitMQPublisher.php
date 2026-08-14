@@ -68,7 +68,7 @@ class RabbitMQPublisher
     }
 
     // Open RabbitMQ connection
-    private function connect(): AMQPSSLConnection|AMQPStreamConnection
+    public function connect(): AMQPSSLConnection|AMQPStreamConnection
     {
         $host = config('rabbitmq.host');
         $port = config('rabbitmq.port');
