@@ -14,36 +14,12 @@
                     @csrf
                     @method('PUT')
 
-                    {{-- Name --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
-                        <input type="text" name="name" value="{{ old('name', $user->name) }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('name')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Naam" name="name" :value="old('name', $user->name)" required />
 
-                    {{-- Email --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">E-mailadres *</label>
-                        <input type="email" name="email" value="{{ old('email', $user->email) }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="E-mailadres" name="email" type="email" :value="old('email', $user->email)" required />
 
                     {{-- Password — optional, only changed when filled in --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Nieuw wachtwoord</label>
-                        <input type="password" name="password"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="Laat leeg om ongewijzigd te laten">
-                        @error('password')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Nieuw wachtwoord" name="password" type="password" placeholder="Laat leeg om ongewijzigd te laten" />
 
                     {{-- Role --}}
                     <div class="mb-6">
