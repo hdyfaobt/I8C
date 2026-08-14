@@ -26,6 +26,14 @@ class Customer extends Model
         return $this->hasMany(Order::class);
     }
 
+    // Unpaid orders still active (not cancelled/refused)
+    public function unpaidActiveOrders(): HasMany
+    {
+        return $this->orders()
+            ->where('paid', false)
+            ->whereNotIn('status', ['cancelled', 'refused']);
+    }
+
     // Human-friendly customer number
     public function customerNumber(): string
     {
