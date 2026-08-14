@@ -12,38 +12,11 @@
                 <form method="POST" action="{{ route('admin.users.store') }}">
                     @csrf
 
-                    {{-- Name --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
-                        <input type="text" name="name" value="{{ old('name') }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="Jan Janssen">
-                        @error('name')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Naam" name="name" :value="old('name')" placeholder="Jan Janssen" required />
 
-                    {{-- Email --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">E-mailadres *</label>
-                        <input type="email" name="email" value="{{ old('email') }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="jan@i8c.be">
-                        @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="E-mailadres" name="email" type="email" :value="old('email')" placeholder="jan@i8c.be" required />
 
-                    {{-- Password --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Wachtwoord *</label>
-                        <input type="password" name="password"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
-                               placeholder="Minstens 8 tekens">
-                        @error('password')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Wachtwoord" name="password" type="password" placeholder="Minstens 8 tekens" required />
 
                     {{-- Role --}}
                     <div class="mb-6">
