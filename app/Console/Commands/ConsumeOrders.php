@@ -4,10 +4,9 @@ namespace App\Console\Commands;
 
 use App\Models\Order;
 use App\Services\OrderSyncService;
+use App\Services\RabbitMQPublisher;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
-use PhpAmqpLib\Connection\AMQPSSLConnection;
-use PhpAmqpLib\Connection\AMQPStreamConnection;
 use PhpAmqpLib\Message\AMQPMessage;
 
 class ConsumeOrders extends Command
@@ -24,7 +23,7 @@ class ConsumeOrders extends Command
         $this->info('[RabbitMQ Consumer] Starting... Press Ctrl+C to stop.');
 
         try {
-            $connection = $this->connect();
+            $connection = app(RabbitMQPublisher::class)->connect();
             $channel = $connection->channel();
 
             // Declare queue (idempotent)
@@ -103,23 +102,5 @@ class ConsumeOrders extends Command
 
             return false;
         }
-    }
-
-    // Open RabbitMQ connection
-    private function connect(): AMQPSSLConnection|AMQPStreamConnection
-    {
-        $host = config('rabbitmq.host');
-        $port = config('rabbitmq.port');
-        $user = config('rabbitmq.user');
-        $password = config('rabbitmq.password');
-        $vhost = config('rabbitmq.vhost');
-
-        if (config('rabbitmq.ssl')) {
-            return new AMQPSSLConnection($host, $port, $user, $password, $vhost, [
-                'verify_peer' => true,
-            ]);
-        }
-
-        return new AMQPStreamConnection($host, $port, $user, $password, $vhost);
     }
 }
