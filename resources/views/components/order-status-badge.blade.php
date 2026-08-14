@@ -1,10 +1,4 @@
-{{--
-    Order status badge — same color/label mapping used in the orders table
-    (orders/_row.blade.php) and the product order history table
-    (products/history.blade.php).
-
-    Usage: <x-order-status-badge :status="$order->status" />
---}}
+{{-- Colored order status badge --}}
 @props(['status'])
 
 @if ($status === 'awaiting_review')
