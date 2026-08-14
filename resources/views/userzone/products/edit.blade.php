@@ -13,36 +13,11 @@
                     @csrf
                     @method('PUT')
 
-                    {{-- Article number --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Artikelnummer *</label>
-                        <input type="text" name="article_number" value="{{ old('article_number', $product->article_number) }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('article_number')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Artikelnummer" name="article_number" :value="old('article_number', $product->article_number)" required />
 
-                    {{-- Name --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
-                        <input type="text" name="name" value="{{ old('name', $product->name) }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('name')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Naam" name="name" :value="old('name', $product->name)" required />
 
-                    {{-- Price --}}
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Prijs (€) *</label>
-                        <input type="number" name="price" value="{{ old('price', $product->price) }}"
-                               step="0.01" min="0"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('price')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Prijs (€)" name="price" type="number" :value="old('price', $product->price)" :step="0.01" :min="0" required last />
 
                     {{-- Buttons --}}
                     <div class="flex items-center justify-between">
