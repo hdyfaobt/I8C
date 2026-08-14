@@ -13,55 +13,15 @@
                     @csrf
                     @method('PATCH') {{-- Laravel uses PATCH for updates --}}
 
-                    {{-- Name --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Naam *</label>
-                        <input type="text" name="name" value="{{ old('name', $customer->name) }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('name')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Naam" name="name" :value="old('name', $customer->name)" required />
 
-                    {{-- Email --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">E-mailadres *</label>
-                        <input type="email" name="email" value="{{ old('email', $customer->email) }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('email')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="E-mailadres" name="email" type="email" :value="old('email', $customer->email)" required />
 
-                    {{-- Phone --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Telefoonnummer</label>
-                        <input type="text" name="phone" value="{{ old('phone', $customer->phone) }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('phone')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Telefoonnummer" name="phone" :value="old('phone', $customer->phone)" />
 
-                    {{-- Company --}}
-                    <div class="mb-4">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Bedrijf</label>
-                        <input type="text" name="company" value="{{ old('company', $customer->company) }}"
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
-                        @error('company')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Bedrijf" name="company" :value="old('company', $customer->company)" />
 
-                    {{-- Address --}}
-                    <div class="mb-6">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">Adres</label>
-                        <textarea name="address" rows="3"
-                                  class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">{{ old('address', $customer->address) }}</textarea>
-                        @error('address')
-                            <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    <x-form-field label="Adres" name="address" type="textarea" :value="old('address', $customer->address)" last />
 
                     {{-- Buttons --}}
                     <div class="flex items-center justify-between">
