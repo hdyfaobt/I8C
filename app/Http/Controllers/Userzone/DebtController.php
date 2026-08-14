@@ -12,15 +12,11 @@ class DebtController extends Controller
     // List customers who owe money
     public function index()
     {
-        $customers = Customer::with(['orders' => function ($query) {
-            $query->where('paid', false)
-                ->whereNotIn('status', ['cancelled', 'refused'])
-                ->with('items');
-        }])->get();
+        $customers = Customer::with(['unpaidActiveOrders.items'])->get();
 
         $debts = $customers
             ->map(function (Customer $customer) {
-                $orders = $customer->orders
+                $orders = $customer->unpaidActiveOrders
                     ->filter(fn (Order $order) => $order->outstandingBalance() > 0)
                     ->values();
 
