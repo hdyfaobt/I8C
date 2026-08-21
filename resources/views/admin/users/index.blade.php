@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="px-6 lg:px-8" x-data="{ deleteModalOpen: false, deleteForm: null, deleting: false }">
+        <div class="px-6 lg:px-8" x-data="{ deleteModalOpen: false, deleteForm: null, deleting: false, clientSearch: '' }">
 
             {{-- Success message --}}
             @if (session('success'))
@@ -22,15 +22,23 @@
                 </div>
             @endif
 
-            {{-- Header row: title + add button — creating stays admin-only --}}
+            {{-- Header row: title + add button — admin and manager --}}
             <div class="flex justify-between items-center mb-6">
                 <h3 class="text-lg font-medium text-gray-900">Overzicht accounts</h3>
-                @role('admin')
+                @hasanyrole('admin|manager')
                     <a href="{{ route('admin.users.create') }}"
                        class="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition">
                         + Account toevoegen
                     </a>
-                @endrole
+                @endhasanyrole
+            </div>
+
+            {{-- Search — naam, e-mail of rol --}}
+            <div class="mb-4">
+                <input type="text"
+                       x-model="clientSearch"
+                       placeholder="Zoek op naam, e-mail of rol..."
+                       class="w-full max-w-sm rounded border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
             </div>
 
             {{-- Users table --}}
@@ -45,7 +53,14 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse ($users as $user)
-                            <tr>
+                            @php
+                                $userSearch = \Illuminate\Support\Str::lower(implode(' ', [
+                                    $user->name,
+                                    $user->email,
+                                    $user->roles->pluck('name')->implode(' '),
+                                ]));
+                            @endphp
+                            <tr x-show="clientSearch === '' || {{ \Illuminate\Support\Js::from($userSearch) }}.includes(clientSearch.toLowerCase())">
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {{ $user->name }}
                                 </td>
@@ -66,8 +81,13 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                    <a href="{{ route('admin.users.edit', $user) }}"
-                                       class="text-indigo-600 hover:text-indigo-900">Bewerken</a>
+                                    {{-- A manager can't touch an admin's or another manager's account --}}
+                                    @if (auth()->user()->hasRole('admin') || ! $user->hasAnyRole(['admin', 'manager']))
+                                        <a href="{{ route('admin.users.edit', $user) }}"
+                                           class="text-indigo-600 hover:text-indigo-900">Bewerken</a>
+                                    @else
+                                        <span class="text-gray-300">Bewerken</span>
+                                    @endif
 
                                     {{-- Deleting stays admin-only, disabled for your own account server-side too (see UserController::destroy()) --}}
                                     @role('admin')

@@ -82,12 +82,16 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
 });
 
 // Admin — user management
-// Viewing + editing is also open to manager; creating/deleting stays admin-only.
+// Viewing, creating, editing: admin + manager. Role restrictions (admin-only
+// role, admin/manager targets) are enforced in UserController. Deleting
+// stays admin-only.
 Route::middleware(['auth', 'role:admin|manager'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
         Route::get('users', [AdminUserController::class, 'index'])->name('users.index');
+        Route::get('users/create', [AdminUserController::class, 'create'])->name('users.create');
+        Route::post('users', [AdminUserController::class, 'store'])->name('users.store');
         Route::get('users/{user}/edit', [AdminUserController::class, 'edit'])->name('users.edit');
         Route::put('users/{user}', [AdminUserController::class, 'update'])->name('users.update');
     });
@@ -96,8 +100,6 @@ Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
-        Route::get('users/create', [AdminUserController::class, 'create'])->name('users.create');
-        Route::post('users', [AdminUserController::class, 'store'])->name('users.store');
         Route::delete('users/{user}', [AdminUserController::class, 'destroy'])->name('users.destroy');
     });
 
