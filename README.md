@@ -95,7 +95,7 @@ tests/Feature/               # Pest feature tests per domein
 Vereisten: PHP 8.4+, Composer, en een lokale RabbitMQ-server (optioneel voor basiswerking, vereist voor Salesforce-sync).
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/hdyfaobt/I8C.git
 cd I8C
 
 composer setup
