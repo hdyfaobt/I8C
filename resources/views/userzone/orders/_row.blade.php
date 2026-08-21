@@ -9,28 +9,42 @@
     the "toon enkel niet betaald" filter) — all defined once in
     index.blade.php and shared across every included row.
 --}}
-<tr x-show="(clientSearch === '' || {{ \Illuminate\Support\Js::from(\Illuminate\Support\Str::lower($order->customer->name.' '.($order->customer->company ?? ''))) }}.includes(clientSearch.toLowerCase())) && (paymentFilter === 'all' || (paymentFilter === 'paid') === {{ $order->paid ? 'true' : 'false' }})">
-    <td class="px-6 py-4 text-sm text-gray-500">{{ $order->id }}</td>
+@php
+    // Everything a receptionist/admin/manager might search for: order
+    // number, klant, bedrijf, e-mail, telefoon, product names and price.
+    $orderSearch = \Illuminate\Support\Str::lower(implode(' ', [
+        $order->id,
+        $order->customer->name,
+        $order->customer->company ?? '',
+        $order->customer->email,
+        $order->customer->phone ?? '',
+        $order->items->pluck('product')->implode(' '),
+        number_format($order->totalPrice(), 2, '.', ''),
+        number_format($order->totalPrice(), 2, ',', ''),
+    ]));
+@endphp
+<tr x-show="(clientSearch === '' || {{ \Illuminate\Support\Js::from($orderSearch) }}.includes(clientSearch.toLowerCase())) && (paymentFilter === 'all' || (paymentFilter === 'paid') === {{ $order->paid ? 'true' : 'false' }})">
+    <td class="px-4 py-4 text-sm text-gray-500">{{ $order->id }}</td>
 
-    <td class="px-6 py-4 text-sm font-medium text-gray-900">
+    <td class="px-4 py-4 text-sm font-medium text-gray-900">
         <a href="{{ route('customers.show', $order->customer) }}" class="hover:text-indigo-600 hover:underline">
             {{ $order->customer->name }}
         </a>
     </td>
 
-    <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+    <td class="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
         {{ $order->created_at->format('d/m/Y H:i') }}
     </td>
 
     {{-- Status — a distinct, logically-matched color per status --}}
-    <td class="px-6 py-4 text-sm">
+    <td class="px-4 py-4 text-sm">
         <x-order-status-badge :status="$order->status" />
     </td>
 
     {{-- Statusdatum — the date matching whichever status is shown above
          (e.g. the pickup date once ready_for_pickup, the received date once
          received, ...) --}}
-    <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">
+    <td class="px-4 py-4 text-sm text-gray-500 whitespace-nowrap">
         @if ($order->status === 'awaiting_review')
             {{ $order->created_at->format('d/m/Y H:i') }}
         @elseif ($order->status === 'pending' && $order->accepted_at)
@@ -52,7 +66,7 @@
         @endif
     </td>
 
-    <td class="px-6 py-4 text-sm text-gray-500">
+    <td class="px-4 py-4 text-sm text-gray-500">
         € {{ number_format($order->totalPrice(), 2, ',', '.') }}
     </td>
 
@@ -62,7 +76,7 @@
          collect payment for once an order is dead, so they get a plain
          "n.v.t." (not applicable) badge instead, and OrderController::
          togglePaid() rejects the request server-side too. --}}
-    <td class="px-6 py-4 text-sm">
+    <td class="px-4 py-4 text-sm">
         <div class="flex flex-col items-start gap-0.5">
             @if ($order->status === 'cancelled')
                 <span class="px-2.5 py-1 rounded text-xs font-medium bg-gray-100 text-gray-400">n.v.t.</span>
@@ -103,14 +117,14 @@
         </div>
     </td>
 
-    <td class="px-6 py-4 text-sm text-center">
+    <td class="px-4 py-4 text-sm text-center">
         <a href="{{ route('orders.show', $order) }}"
            class="px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">
             Details
         </a>
     </td>
 
-    <td class="px-6 py-4 text-sm">
+    <td class="px-4 py-4 text-sm">
         <div class="flex flex-wrap items-center justify-end gap-2">
             {{-- Accept / refuse — receptionist/admin/manager only. Orderpicker
                  never sees these orders at all (see OrderController::index() filter).
@@ -184,7 +198,7 @@
     </td>
 
     {{-- Print — its own column, separate from Actie --}}
-    <td class="px-6 py-4 text-sm text-right">
+    <td class="px-4 py-4 text-sm text-right">
         @hasanyrole('receptionist|admin|manager')
             <a href="{{ route('orders.print', $order) }}" target="_blank"
                class="inline-flex items-center gap-1 whitespace-nowrap px-2.5 py-1 rounded text-xs font-medium bg-gray-700 text-white hover:bg-gray-800 transition">

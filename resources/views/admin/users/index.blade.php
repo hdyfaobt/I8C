@@ -47,8 +47,8 @@
                         <tr>
                             <x-sortable-header column="name" label="Naam" />
                             <x-sortable-header column="email" label="E-mail" />
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-                            <th class="px-6 py-3"></th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                            <th class="px-4 py-3"></th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
@@ -61,13 +61,13 @@
                                 ]));
                             @endphp
                             <tr x-show="clientSearch === '' || {{ \Illuminate\Support\Js::from($userSearch) }}.includes(clientSearch.toLowerCase())">
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                     {{ $user->name }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $user->email }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm">
                                     @foreach ($user->roles as $role)
                                         <span class="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs">
                                             {{-- Capitalized for display only — the stored role name stays lowercase --}}
@@ -80,7 +80,7 @@
                                         </span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
+                                <td class="px-4 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                     {{-- A manager can't touch an admin's or another manager's account --}}
                                     @if (auth()->user()->hasRole('admin') || ! $user->hasAnyRole(['admin', 'manager']))
                                         <a href="{{ route('admin.users.edit', $user) }}"
@@ -105,7 +105,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-8 text-center text-gray-400">
+                                <td colspan="4" class="px-4 py-8 text-center text-gray-400">
                                     Geen accounts gevonden.
                                 </td>
                             </tr>

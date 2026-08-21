@@ -48,7 +48,7 @@
                     <div class="mb-4">
                         <input type="text"
                                x-model="clientSearch"
-                               placeholder="Zoek op klant..."
+                               placeholder="Zoek op #, klant, product, bedrag..."
                                class="w-full max-w-sm rounded border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                     </div>
 
@@ -61,9 +61,9 @@
                                 <x-sortable-header column="customer" label="Klant" />
                                 <x-sortable-header column="created_at" label="Besteldatum" />
                                 <x-sortable-header column="paid" label="Betaling" />
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -71,7 +71,7 @@
                                 @include('userzone.orders._row_orderpicker', ['order' => $order])
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                                    <td colspan="7" class="px-4 py-8 text-center text-gray-400">
                                         Geen bestellingen te bereiden.
                                     </td>
                                 </tr>
@@ -88,9 +88,9 @@
                                 <x-sortable-header column="customer" label="Klant" />
                                 <x-sortable-header column="created_at" label="Besteldatum" />
                                 <x-sortable-header column="paid" label="Betaling" />
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -98,7 +98,7 @@
                                 @include('userzone.orders._row_orderpicker', ['order' => $order])
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                                    <td colspan="7" class="px-4 py-8 text-center text-gray-400">
                                         Nog geen afgewerkte bestellingen.
                                     </td>
                                 </tr>
@@ -118,9 +118,9 @@
                                     <x-sortable-header column="customer" label="Klant" />
                                     <x-sortable-header column="created_at" label="Besteldatum" />
                                     <x-sortable-header column="paid" label="Betaling" />
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
-                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
-                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
+                                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
                                 </tr>
                             </thead>
                             <tbody class="bg-white divide-y divide-gray-200">
@@ -159,7 +159,7 @@
             <div class="mb-4 flex flex-wrap items-center gap-3">
                 <input type="text"
                        x-model="clientSearch"
-                       placeholder="Zoek op klant..."
+                       placeholder="Zoek op #, klant, product, bedrag..."
                        class="w-full max-w-sm rounded border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
 
                 <select x-model="paymentFilter"
@@ -184,12 +184,12 @@
                         <x-sortable-header column="customer" label="Klant" />
                         <x-sortable-header column="created_at" label="Besteldatum" />
                         <x-sortable-header column="status" label="Status" />
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
                         <x-sortable-header column="total" label="Totaal" />
                         <x-sortable-header column="paid" label="Betaling" />
-                        <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
+                        <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                        <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-gray-200">
@@ -197,7 +197,7 @@
                         @include('userzone.orders._row', ['order' => $order])
                     @empty
                         <tr>
-                            <td colspan="10" class="px-6 py-8 text-center text-gray-400">
+                            <td colspan="10" class="px-4 py-8 text-center text-gray-400">
                                 Geen bestellingen gevonden.
                             </td>
                         </tr>
@@ -223,13 +223,13 @@
                                 <x-sortable-header column="id" label="#" />
                                 <x-sortable-header column="customer" label="Klant" />
                                 <x-sortable-header column="created_at" label="Besteldatum" />
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Statusdatum</th>
                                 <x-sortable-header column="total" label="Totaal" />
                                 <x-sortable-header column="paid" label="Betaling" />
-                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
-                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
+                                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Print</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">

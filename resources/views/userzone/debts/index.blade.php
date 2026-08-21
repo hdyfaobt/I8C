@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="px-6 lg:px-8">
+        <div class="px-6 lg:px-8" x-data="{ clientSearch: '' }">
 
             {{-- Summary — total still owed to us, across every customer --}}
             <div class="mb-6 p-4 rounded-lg border {{ $debts->isEmpty() ? 'bg-gray-50 border-gray-200' : 'bg-red-50 border-red-200' }}">
@@ -22,25 +22,42 @@
                     Onbetaalde bestellingen — producten die niet meer op voorraad waren, tellen hier niet mee (zie Terugbetalingen).
                 </p>
             </div>
+            {{-- Search — klant, bedrijf, klantnummer of bedrag --}}
+            <div class="mb-4">
+                <input type="text"
+                       x-model="clientSearch"
+                       placeholder="Zoek op klant, bedrijf of bedrag..."
+                       class="w-full max-w-sm rounded border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            </div>
+
             <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
                             <x-sortable-header column="customer" label="Klant" />
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Openstaande bestellingen</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Openstaande bestellingen</th>
                             <x-sortable-header column="total" label="Totaal verschuldigd" align="right" />
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse ($debts as $row)
-                            <tr>
-                                <td class="px-6 py-4 text-sm font-medium text-gray-900 align-top">
+                            @php
+                                $debtSearch = \Illuminate\Support\Str::lower(implode(' ', [
+                                    $row['customer']->name,
+                                    $row['customer']->company ?? '',
+                                    $row['customer']->customerNumber(),
+                                    number_format($row['total'], 2, '.', ''),
+                                    number_format($row['total'], 2, ',', ''),
+                                ]));
+                            @endphp
+                            <tr x-show="clientSearch === '' || {{ \Illuminate\Support\Js::from($debtSearch) }}.includes(clientSearch.toLowerCase())">
+                                <td class="px-4 py-4 text-sm font-medium text-gray-900 align-top">
                                     {{ $row['customer']->name }}
                                     <br><span class="text-gray-400 text-xs font-mono">{{ $row['customer']->customerNumber() }}</span>
                                     @if ($row['customer']->company)
                                         <br><span class="text-gray-400 text-xs">{{ $row['customer']->company }}</span>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-sm align-top">
+                                <td class="px-4 py-4 text-sm align-top">
                                     <div class="flex flex-wrap gap-1.5">
                                         @foreach ($row['orders'] as $order)
                                             <a href="{{ route('orders.show', $order) }}"
@@ -50,13 +67,13 @@
                                         @endforeach
                                     </div>
                                 </td>
-                                <td class="px-6 py-4 text-sm text-right font-semibold text-red-700 align-top whitespace-nowrap">
+                                <td class="px-4 py-4 text-sm text-right font-semibold text-red-700 align-top whitespace-nowrap">
                                     € {{ number_format($row['total'], 2, ',', '.') }}
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="3" class="px-6 py-8 text-center text-gray-400">
+                                <td colspan="3" class="px-4 py-8 text-center text-gray-400">
                                     Geen enkele klant heeft nog een openstaand bedrag.
                                 </td>
                             </tr>

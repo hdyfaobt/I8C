@@ -6,7 +6,7 @@
     </x-slot>
 
     <div class="py-12">
-        <div class="px-6 lg:px-8">
+        <div class="px-6 lg:px-8" x-data="{ clientSearch: '' }">
 
             {{-- Success message --}}
             @if (session('success'))
@@ -31,7 +31,20 @@
                 </a>
             </div>
 
-            {{-- Customers table --}}
+            {{-- Client-side search — filters by naam, bedrijf and e-mail,
+                 no page reload (same pattern as the orders overview). --}}
+            <div class="mb-4">
+                <input type="text"
+                       x-model="clientSearch"
+                       placeholder="Zoek op klant, bedrijf of e-mail..."
+                       class="w-full max-w-sm rounded border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
+            </div>
+
+            {{-- Customers table — wrapped in overflow-x-auto so an overflow
+                 scrolls just the table, never the whole page. Naam links
+                 straight to the detail page, so there's no separate "Details"
+                 column taking up width. --}}
+            <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
                         <tr>
@@ -40,29 +53,31 @@
                             <x-sortable-header column="company" label="Bedrijf" />
                             <x-sortable-header column="email" label="E-mail" />
                             <x-sortable-header column="phone" label="Telefoon" />
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salesforce</th>
-                            <th class="px-6 py-3"></th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Salesforce</th>
+                            <th class="px-4 py-3"></th>
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @forelse ($customers as $customer)
-                            <tr>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
+                            <tr x-show="clientSearch === '' || {{ \Illuminate\Support\Js::from(\Illuminate\Support\Str::lower($customer->name.' '.($customer->company ?? '').' '.$customer->email)) }}.includes(clientSearch.toLowerCase())">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
                                     {{ $customer->customerNumber() }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                    {{ $customer->name }}
+                                <td class="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    <a href="{{ route('customers.show', $customer) }}" class="hover:text-indigo-600 hover:underline">
+                                        {{ $customer->name }}
+                                    </a>
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
                                     {{ $customer->company ?? '—' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $customer->email }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {{ $customer->phone ?? '—' }}
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                <td class="px-4 py-4 whitespace-nowrap text-sm">
                                     @if ($customer->salesforce_id)
                                         <span class="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">
                                             Gesynchroniseerd
@@ -84,12 +99,11 @@
                                         </form>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
-                                    <a href="{{ route('customers.show', $customer) }}"
-                                       class="text-indigo-600 hover:text-indigo-900">Details</a>
-
-                                    <a href="{{ route('customers.edit', $customer) }}"
-                                       class="text-indigo-600 hover:text-indigo-900">Bewerken</a>
+                                <td class="px-4 py-4 whitespace-nowrap text-right">
+                                    <a href="{{ route('customers.edit', $customer) }}" title="Bewerken"
+                                       class="inline-flex items-center justify-center w-8 h-8 rounded bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">
+                                        ✏️
+                                    </a>
                                 </td>
                             </tr>
                         @empty
@@ -101,6 +115,7 @@
                         @endforelse
                     </tbody>
                 </table>
+            </div>
 
         </div>
     </div>
