@@ -13,7 +13,7 @@ Webapplicatie voor bestel- en klantenbeheer, gebouwd met Laravel. De app central
 - [Omgevingsvariabelen](#omgevingsvariabelen)
 - [Ontwikkelserver](#ontwikkelserver)
 - [Testen](#testen)
-- [Standaardaccount](#standaardaccount)
+- [Testprofielen](#testprofielen)
 
 ## Functionaliteiten
 
@@ -40,7 +40,7 @@ Toegangscontrole wordt afgedwongen via [spatie/laravel-permission](https://spati
 ## Technische stack
 
 - **Backend:** PHP 8.4, Laravel 13
-- **Frontend:** Blade, Alpine.js, Tailwind CSS, Vite
+- **Frontend:** Blade, Alpine.js (via CDN), Tailwind CSS (via CDN, `@tailwindcss/browser`) — geen Node/npm-buildstap nodig
 - **Database:** SQLite (standaard, configureerbaar via `.env`)
 - **Wachtrij:** RabbitMQ (`php-amqplib`)
 - **CRM-integratie:** Salesforce REST API (OAuth 2.0 Client Credentials flow)
@@ -92,7 +92,7 @@ tests/Feature/               # Pest feature tests per domein
 
 ## Installatie
 
-Vereisten: PHP 8.4+, Composer, en een lokale RabbitMQ-server (optioneel voor basiswerking, vereist voor Salesforce-sync).
+Vereisten: PHP 8.4+ met de `sqlite3`/`pdo_sqlite`-extensies, en Composer. **Geen Node/npm nodig** — Tailwind en Alpine.js worden via CDN geladen (zie `resources/views/layouts/app.blade.php` en `guest.blade.php`).
 
 ```bash
 git clone https://github.com/hdyfaobt/I8C.git
@@ -107,6 +107,16 @@ Het `composer setup`-script (zie `composer.json`) doet automatisch:
 2. `.env` aanmaken vanuit `.env.example` (indien nog niet aanwezig)
 3. `php artisan key:generate`
 4. `php artisan migrate --force`
+
+Op een nieuwe checkout bestaat `database/database.sqlite` nog niet — maak het bestand eerst aan (op Windows: gewoon een leeg bestand aanmaken op dat pad):
+
+```bash
+# macOS/Linux
+touch database/database.sqlite
+
+# Windows (PowerShell)
+New-Item database\database.sqlite -ItemType File
+```
 
 Vul daarna de database met basisdata (rollen, standaard admin-account, productcatalogus):
 
@@ -147,6 +157,13 @@ Dit start gelijktijdig, via `concurrently`:
 - `php artisan pail` — live logs
 - `php artisan rabbitmq:consume` — de RabbitMQ-consumer voor Salesforce-sync
 
+> **Let op:** het script gebruikt `--kill-others`. Als je geen RabbitMQ-server lokaal hebt draaien, stopt `rabbitmq:consume` meteen met een verbindingsfout — en `--kill-others` sluit daardoor **alle** andere processen (server, queue, logs) mee af. Heb je geen RabbitMQ nodig om te testen? Start de processen dan apart in plaats van via `composer dev`:
+>
+> ```bash
+> php artisan serve
+> php artisan queue:listen --tries=1
+> ```
+
 ## Testen
 
 ```bash
@@ -155,11 +172,15 @@ composer test
 
 Dit wist eerst de configuratiecache en draait vervolgens de volledige Pest-testsuite (`tests/Feature/`), met o.a. tests voor authenticatie, bestellingen, de picking-workflow, terugbetalingen, schulden, gebruikersbeheer en de Salesforce-synchronisatie.
 
-## Standaardaccount
+## Testprofielen
 
-Na `php artisan db:seed` is er een standaard admin-account beschikbaar:
+Na `php artisan db:seed` bestaan er precies **twee** accounts (zie `database/seeders/AdminUserSeeder.php` en `DatabaseSeeder.php`) — er zijn momenteel **geen** seeded accounts voor de rollen `manager` of `orderpicker`:
 
-- **E-mail:** `admin@be`
-- **Wachtwoord:** `password`
+| Rol | E-mail | Wachtwoord |
+|---|---|---|
+| admin | `admin@be` | `password` |
+| receptionist | `test@example.com` | `password` |
 
-> Wijzig dit wachtwoord voordat de applicatie in een gedeelde of publieke omgeving draait.
+Wil je ook een manager- of orderpicker-account om te testen? Maak er een aan als admin via **Admin → Gebruikers → Nieuwe gebruiker** (`/admin/users/create`), of voeg een seeder toe (bv. `TestAccountsSeeder`) die `assignRole('manager')` / `assignRole('orderpicker')` aanroept.
+
+> Wijzig deze wachtwoorden voordat de applicatie in een gedeelde of publieke omgeving draait.
