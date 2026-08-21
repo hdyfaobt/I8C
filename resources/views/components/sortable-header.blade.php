@@ -23,7 +23,7 @@
     $icon = $isActive ? ($currentDirection === 'asc' ? '▲' : '▼') : '⇅';
 @endphp
 
-<th class="px-6 py-3 text-{{ $align }} text-xs font-medium text-gray-500 uppercase tracking-wider">
+<th class="px-4 py-3 text-{{ $align }} text-xs font-medium text-gray-500 uppercase tracking-wider">
     <a href="{{ request()->url() }}{{ count($query) ? '?'.http_build_query($query) : '' }}"
        class="inline-flex items-center gap-1 hover:text-gray-700 transition">
         {{ $label }}

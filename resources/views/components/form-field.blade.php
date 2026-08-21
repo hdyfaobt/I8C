@@ -17,7 +17,7 @@
 
     @if ($type === 'textarea')
         <textarea name="{{ $name }}" rows="{{ $rows }}"
-                  class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+                  class="w-full rounded-md border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                   @if ($placeholder) placeholder="{{ $placeholder }}" @endif
         >{{ $value }}</textarea>
     @else
@@ -25,7 +25,7 @@
                @if (! is_null($step)) step="{{ $step }}" @endif
                @if (! is_null($min)) min="{{ $min }}" @endif
                @if ($placeholder) placeholder="{{ $placeholder }}" @endif
-               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+               class="w-full rounded-md border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
     @endif
 
     @error($name)

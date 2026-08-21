@@ -10,7 +10,7 @@
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">Naam</label>
         <input type="text" name="name" value="{{ old('name', $user->name) }}"
-               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+               class="w-full rounded-md border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                required autofocus autocomplete="name">
         @error('name')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
@@ -20,7 +20,7 @@
     <div>
         <label class="block text-sm font-medium text-gray-700 mb-1">E-mailadres</label>
         <input type="email" name="email" value="{{ old('email', $user->email) }}"
-               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
+               class="w-full rounded-md border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition"
                required autocomplete="username">
         @error('email')
             <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
