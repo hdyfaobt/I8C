@@ -27,7 +27,7 @@ class OrderController extends Controller
         $isPureOrderpicker = $this->isPureOrderpicker();
 
         // Sort by id, not date
-        $query = Order::with(['customer', 'items'])->latest('id');
+        $query = Order::with(['customer', 'items', 'preparedBy'])->latest('id');
 
         if ($isPureOrderpicker) {
             $query->whereIn('status', self::ORDERPICKER_VISIBLE_STATUSES);
@@ -45,10 +45,28 @@ class OrderController extends Controller
 
         $allOrders = $query->get();
 
+        if ($isPureOrderpicker) {
+            return $this->indexForOrderpicker($allOrders, $isPureOrderpicker, $hasActiveFilter);
+        }
+
         $orders = $this->sortOrders($allOrders->reject(fn (Order $order) => $order->status === 'cancelled')->values());
         $cancelledOrders = $this->sortOrders($allOrders->filter(fn (Order $order) => $order->status === 'cancelled')->values());
 
         return view('userzone.orders.index', compact('orders', 'cancelledOrders', 'isPureOrderpicker', 'hasActiveFilter'));
+    }
+
+    // Orderpicker view: split into "to prepare", "mine done", "colleagues' done"
+    private function indexForOrderpicker(Collection $allOrders, bool $isPureOrderpicker, bool $hasActiveFilter)
+    {
+        $toPrepare = $this->sortOrders($allOrders->where('status', 'sent')->values());
+
+        $completed = $allOrders->whereIn('status', ['ready_for_pickup', 'received']);
+        $myCompleted = $this->sortOrders($completed->where('prepared_by', Auth::id())->values());
+        $colleagueCompleted = $this->sortOrders($completed->where('prepared_by', '!=', Auth::id())->values());
+
+        return view('userzone.orders.index', compact(
+            'toPrepare', 'myCompleted', 'colleagueCompleted', 'isPureOrderpicker', 'hasActiveFilter'
+        ));
     }
 
     // Column sort for orders list

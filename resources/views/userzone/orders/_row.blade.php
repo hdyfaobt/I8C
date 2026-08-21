@@ -13,7 +13,9 @@
     <td class="px-6 py-4 text-sm text-gray-500">{{ $order->id }}</td>
 
     <td class="px-6 py-4 text-sm font-medium text-gray-900">
-        {{ $order->customer->name }}
+        <a href="{{ route('customers.show', $order->customer) }}" class="hover:text-indigo-600 hover:underline">
+            {{ $order->customer->name }}
+        </a>
     </td>
 
     <td class="px-6 py-4 text-sm text-gray-500 whitespace-nowrap">

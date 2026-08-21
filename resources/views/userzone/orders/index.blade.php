@@ -39,14 +39,12 @@
             @endif
 
             @if ($isPureOrderpicker)
-                {{-- Orderpicker gets a stripped-down page: klant, datum, betaling,
-                     details, overnemen. No status/totaal/print — an order only
-                     ever shows up here once it's already accepted, so none of
-                     that is their concern. Betaling is shown so they know
-                     whether cash is still due on pickup. --}}
+                {{-- Orderpicker gets a stripped-down page split in three:
+                     still to prepare (top, the actual queue), then what he
+                     finished himself, then colleagues' finished orders —
+                     visible for context but read-only (see OrderController::
+                     show()'s $canWorkOnPicking gate). --}}
                 <div x-data="{ clientSearch: '' }">
-                    <h3 class="text-lg font-medium text-gray-900 mb-6">Overzicht bestellingen</h3>
-
                     <div class="mb-4">
                         <input type="text"
                                x-model="clientSearch"
@@ -54,6 +52,8 @@
                                class="w-full max-w-sm rounded border-2 border-gray-300 px-4 py-2.5 text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition">
                     </div>
 
+                    {{-- Nog te bereiden — the actual work queue --}}
+                    <h3 class="text-lg font-medium text-gray-900 mb-3">Nog te bereiden</h3>
                     <table class="min-w-full divide-y divide-gray-200">
                         <thead class="bg-gray-50">
                             <tr>
@@ -61,22 +61,75 @@
                                 <x-sortable-header column="customer" label="Klant" />
                                 <x-sortable-header column="created_at" label="Besteldatum" />
                                 <x-sortable-header column="paid" label="Betaling" />
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
                                 <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
                                 <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
-                            @forelse ($orders as $order)
+                            @forelse ($toPrepare as $order)
                                 @include('userzone.orders._row_orderpicker', ['order' => $order])
                             @empty
                                 <tr>
-                                    <td colspan="6" class="px-6 py-8 text-center text-gray-400">
-                                        Geen bestellingen gevonden.
+                                    <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                                        Geen bestellingen te bereiden.
                                     </td>
                                 </tr>
                             @endforelse
                         </tbody>
                     </table>
+
+                    {{-- Mijn afgewerkte bestellingen — what he himself finished --}}
+                    <h3 class="text-lg font-medium text-gray-900 mb-3 mt-10">Mijn afgewerkte bestellingen</h3>
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <x-sortable-header column="id" label="#" />
+                                <x-sortable-header column="customer" label="Klant" />
+                                <x-sortable-header column="created_at" label="Besteldatum" />
+                                <x-sortable-header column="paid" label="Betaling" />
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
+                                <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @forelse ($myCompleted as $order)
+                                @include('userzone.orders._row_orderpicker', ['order' => $order])
+                            @empty
+                                <tr>
+                                    <td colspan="7" class="px-6 py-8 text-center text-gray-400">
+                                        Nog geen afgewerkte bestellingen.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+
+                    {{-- Bestellingen van collega's — view-only, no action buttons
+                         render for these since their status is already
+                         ready_for_pickup/received (see _row_orderpicker). --}}
+                    @if ($colleagueCompleted->isNotEmpty())
+                        <h3 class="text-lg font-medium text-gray-900 mb-3 mt-10">Bestellingen van collega's</h3>
+                        <table class="min-w-full divide-y divide-gray-200 opacity-90">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <x-sortable-header column="id" label="#" />
+                                    <x-sortable-header column="customer" label="Klant" />
+                                    <x-sortable-header column="created_at" label="Besteldatum" />
+                                    <x-sortable-header column="paid" label="Betaling" />
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Voorbereid door</th>
+                                    <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Info</th>
+                                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actie</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @foreach ($colleagueCompleted as $order)
+                                    @include('userzone.orders._row_orderpicker', ['order' => $order])
+                                @endforeach
+                            </tbody>
+                        </table>
+                    @endif
                 </div>
             @else
 

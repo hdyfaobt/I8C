@@ -16,6 +16,14 @@
             <span class="px-2.5 py-1 rounded text-xs font-medium bg-gray-100 text-gray-500">Niet betaald</span>
         @endif
     </td>
+    {{-- Who's on it — lets an orderpicker spot a colleague's order at a glance --}}
+    <td class="px-6 py-4 text-sm text-gray-500">
+        @if ($order->prepared_by === auth()->id())
+            <span class="text-purple-700 font-medium">Jij</span>
+        @else
+            {{ $order->preparedBy->name ?? '—' }}
+        @endif
+    </td>
     <td class="px-6 py-4 text-sm text-center">
         <a href="{{ route('orders.show', $order) }}"
            class="px-2.5 py-1 rounded text-xs font-medium bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition">
